@@ -77,3 +77,11 @@ const App: React.FC = () => {
 };
 
 export default App;
+<footer style={{
+  textAlign: "center",
+  padding: "20px",
+  fontSize: "14px",
+  color: "#888"
+}}>
+  © 2026 Skills Ka Hub • Made by <b>Editor Nishant</b>
+</footer>
