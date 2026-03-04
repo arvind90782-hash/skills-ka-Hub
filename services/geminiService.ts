@@ -16,6 +16,37 @@ const getApiKey = (): string => {
 
 const getAiClient = () => new GoogleGenAI({ apiKey: getApiKey() });
 
+const COURSE_MODELS = ['gemini-2.5-flash', 'gemini-1.5-flash'] as const;
+const ANALYSIS_MODELS = ['gemini-2.5-flash', 'gemini-1.5-flash'] as const;
+const FAST_TEXT_MODELS = ['gemini-2.5-flash', 'gemini-1.5-flash'] as const;
+
+const VALID_TOOL_IDS = ['image-analyzer', 'video-analyzer', 'image-animator', 'image-generator'] as const;
+type ValidToolId = (typeof VALID_TOOL_IDS)[number];
+
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim().length > 0;
+
+const toText = (value: unknown, fallback: string): string =>
+  isNonEmptyString(value) ? value.trim() : fallback;
+
+const toStringArray = (value: unknown, minLen = 1): string[] => {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const arr = value.filter(isNonEmptyString).map((entry) => entry.trim());
+  return arr.length >= minLen ? arr : [];
+};
+
+const isModelNotFoundError = (error: unknown): boolean => {
+  const raw = errorToString(error).toLowerCase();
+  return (
+    (raw.includes('model') && raw.includes('not found')) ||
+    (raw.includes('models/') && raw.includes('not found')) ||
+    raw.includes('unsupported model') ||
+    raw.includes('does not support')
+  );
+};
+
 const quizSchema = {
   type: Type.OBJECT,
   properties: {
@@ -241,6 +272,141 @@ const buildLocalCourseFallback = (skillName: string): GeneratedContent => ({
   ],
 });
 
+const sanitizeContentBlock = (rawBlock: unknown): ContentBlock | null => {
+  if (!rawBlock || typeof rawBlock !== 'object') {
+    return null;
+  }
+
+  const block = rawBlock as Record<string, unknown>;
+  const type = block.type;
+
+  if (!isNonEmptyString(type)) {
+    return null;
+  }
+
+  switch (type) {
+    case 'heading':
+    case 'paragraph':
+    case 'tip':
+    case 'template':
+    case 'benefits':
+    case 'infographic':
+    case 'funFact':
+      return {
+        type,
+        text: toText(block.text, 'Is section ka text unavailable hai.'),
+      } as ContentBlock;
+    case 'quiz': {
+      const options = toStringArray(block.options, 2);
+      if (!isNonEmptyString(block.question) || !isNonEmptyString(block.explanation) || options.length < 2) {
+        return null;
+      }
+      const idx =
+        typeof block.correctAnswerIndex === 'number' &&
+        Number.isInteger(block.correctAnswerIndex) &&
+        block.correctAnswerIndex >= 0 &&
+        block.correctAnswerIndex < options.length
+          ? block.correctAnswerIndex
+          : 0;
+      return {
+        type: 'quiz',
+        question: block.question.trim(),
+        options,
+        correctAnswerIndex: idx,
+        explanation: block.explanation.trim(),
+      };
+    }
+    case 'aiChallenge': {
+      const toolId = block.toolId;
+      if (!isNonEmptyString(block.challenge) || !isNonEmptyString(toolId) || !VALID_TOOL_IDS.includes(toolId as ValidToolId)) {
+        return null;
+      }
+      return {
+        type: 'aiChallenge',
+        challenge: block.challenge.trim(),
+        toolId: toolId as ValidToolId,
+      };
+    }
+    case 'poll': {
+      const options = toStringArray(block.options, 2);
+      if (!isNonEmptyString(block.question) || options.length < 2) {
+        return null;
+      }
+      return {
+        type: 'poll',
+        question: block.question.trim(),
+        options,
+      };
+    }
+    case 'qAndA':
+      if (!isNonEmptyString(block.question) || !isNonEmptyString(block.answer)) {
+        return null;
+      }
+      return {
+        type: 'qAndA',
+        question: block.question.trim(),
+        answer: block.answer.trim(),
+      };
+    case 'expertSays':
+      if (!isNonEmptyString(block.quote) || !isNonEmptyString(block.expertName)) {
+        return null;
+      }
+      return {
+        type: 'expertSays',
+        quote: block.quote.trim(),
+        expertName: block.expertName.trim(),
+      };
+    case 'mythBuster':
+      if (!isNonEmptyString(block.myth) || !isNonEmptyString(block.reality)) {
+        return null;
+      }
+      return {
+        type: 'mythBuster',
+        myth: block.myth.trim(),
+        reality: block.reality.trim(),
+      };
+    case 'doAndDont': {
+      const dos = toStringArray(block.dos, 1);
+      const donts = toStringArray(block.donts, 1);
+      if (dos.length === 0 || donts.length === 0) {
+        return null;
+      }
+      return {
+        type: 'doAndDont',
+        dos,
+        donts,
+      };
+    }
+    case 'shockingFact':
+      if (!isNonEmptyString(block.fact)) {
+        return null;
+      }
+      return {
+        type: 'shockingFact',
+        fact: block.fact.trim(),
+      };
+    case 'ideaCorner':
+      if (!isNonEmptyString(block.prompt)) {
+        return null;
+      }
+      return {
+        type: 'ideaCorner',
+        prompt: block.prompt.trim(),
+      };
+    case 'flashcard':
+      if (!isNonEmptyString(block.front) || !isNonEmptyString(block.back)) {
+        return null;
+      }
+      return {
+        type: 'flashcard',
+        front: block.front.trim(),
+        back: block.back.trim(),
+      };
+    default:
+      return null;
+  }
+};
+
 const normalizeSubPages = (rawSubPages: unknown): SubPage[] => {
   if (!Array.isArray(rawSubPages)) {
     return [];
@@ -259,7 +425,9 @@ const normalizeSubPages = (rawSubPages: unknown): SubPage[] => {
         : 'Smooth reveal animation with highlighted key points.';
 
     const rawBlocks = Array.isArray(entry?.content) ? entry.content : [];
-    const content = rawBlocks.filter((block: any) => block && typeof block === 'object' && typeof block.type === 'string');
+    const content = rawBlocks
+      .map(sanitizeContentBlock)
+      .filter((block): block is ContentBlock => block !== null);
 
     return {
       title,
@@ -332,6 +500,10 @@ export const getFriendlyAiErrorMessage = (error: unknown, fallbackMessage: strin
     return 'Aaj ka Gemini quota/rate-limit exceed ho gaya hai. Thodi der baad try karo ya billing/plan check karo.';
   }
 
+  if (isModelNotFoundError(error)) {
+    return 'Selected AI model ab available nahi hai. App ko stable model par update kiya gaya hai, page refresh karke phir try karo.';
+  }
+
   if (
     normalized.includes('requested entity was not found') ||
     normalized.includes('permission_denied') ||
@@ -340,14 +512,6 @@ export const getFriendlyAiErrorMessage = (error: unknown, fallbackMessage: strin
     normalized.includes('invalid api key')
   ) {
     return 'API key invalid ya unauthorized hai. Sahi key select karke phir try karo.';
-  }
-
-  if (
-    normalized.includes('model') && normalized.includes('not found') ||
-    normalized.includes('unsupported model') ||
-    normalized.includes('does not support')
-  ) {
-    return 'Selected AI model ab available nahi hai. App ko stable model par update kiya gaya hai, page refresh karke phir try karo.';
   }
 
   if (
@@ -398,14 +562,30 @@ export const generateSkillContent = async (skillName: string): Promise<Generated
       Tone friendly, actionable aur encouraging rakho.
     `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-        responseSchema: moduleSchema,
-      },
-    });
+    let response: any = null;
+    let lastError: unknown = null;
+    for (const model of COURSE_MODELS) {
+      try {
+        response = await ai.models.generateContent({
+          model,
+          contents: prompt,
+          config: {
+            responseMimeType: 'application/json',
+            responseSchema: moduleSchema,
+          },
+        });
+        break;
+      } catch (error) {
+        lastError = error;
+        if (!isModelNotFoundError(error)) {
+          throw error;
+        }
+      }
+    }
+
+    if (!response) {
+      throw lastError ?? new Error('No supported model available for course generation.');
+    }
 
     const jsonString = response.text;
     if (!jsonString) {
@@ -439,10 +619,28 @@ export const analyzeImage = async (prompt: string, imageBase64: string, mimeType
     const ai = getAiClient();
     const imagePart = { inlineData: { data: imageBase64, mimeType } };
     const textPart = { text: prompt };
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: { parts: [textPart, imagePart] },
-    });
+    let response: any = null;
+    let lastError: unknown = null;
+
+    for (const model of ANALYSIS_MODELS) {
+      try {
+        response = await ai.models.generateContent({
+          model,
+          contents: { parts: [textPart, imagePart] },
+        });
+        break;
+      } catch (error) {
+        lastError = error;
+        if (!isModelNotFoundError(error)) {
+          throw error;
+        }
+      }
+    }
+
+    if (!response) {
+      throw lastError ?? new Error('No supported model available for image analysis.');
+    }
+
     return response.text ?? 'Kuch samajh nahi aaya, phir se try karein.';
   } catch (error) {
     throw new Error(
@@ -456,10 +654,28 @@ export const analyzeVideo = async (prompt: string, videoBase64: string, mimeType
     const ai = getAiClient();
     const videoPart = { inlineData: { data: videoBase64, mimeType } };
     const textPart = { text: prompt };
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: { parts: [textPart, videoPart] },
-    });
+    let response: any = null;
+    let lastError: unknown = null;
+
+    for (const model of ANALYSIS_MODELS) {
+      try {
+        response = await ai.models.generateContent({
+          model,
+          contents: { parts: [textPart, videoPart] },
+        });
+        break;
+      } catch (error) {
+        lastError = error;
+        if (!isModelNotFoundError(error)) {
+          throw error;
+        }
+      }
+    }
+
+    if (!response) {
+      throw lastError ?? new Error('No supported model available for video analysis.');
+    }
+
     return response.text ?? 'Video ajeeb thi, kuch samajh nahi aaya.';
   } catch (error) {
     throw new Error(
@@ -562,10 +778,23 @@ export const generateImage = async (
 export const generateFastText = async (prompt: string) => {
   try {
     const ai = getAiClient();
-    return ai.models.generateContentStream({
-      model: 'gemini-2.5-flash-lite-latest',
-      contents: prompt,
-    });
+    let lastError: unknown = null;
+
+    for (const model of FAST_TEXT_MODELS) {
+      try {
+        return ai.models.generateContentStream({
+          model,
+          contents: prompt,
+        });
+      } catch (error) {
+        lastError = error;
+        if (!isModelNotFoundError(error)) {
+          throw error;
+        }
+      }
+    }
+
+    throw lastError ?? new Error('No supported model available for text generation.');
   } catch (error) {
     throw new Error(
       getFriendlyAiErrorMessage(error, 'Text generation abhi fail ho gaya. Thodi der baad phir try karo.')

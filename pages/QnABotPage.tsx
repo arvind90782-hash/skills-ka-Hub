@@ -16,6 +16,16 @@ interface Message {
     sources?: GroundingSource[];
 }
 
+const CHAT_MODELS = ['gemini-2.5-flash', 'gemini-1.5-flash'];
+
+const safeHostname = (url: string): string => {
+    try {
+        return new URL(url).hostname.replace('www.', '');
+    } catch {
+        return 'source';
+    }
+};
+
 const QnABotPage: React.FC = () => {
     const [chat, setChat] = useState<Chat | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
@@ -32,13 +42,28 @@ const QnABotPage: React.FC = () => {
                 throw new Error("API_KEY environment variable not set. Please add a key to .env.");
             }
             const ai = new GoogleGenAI({ apiKey: API_KEY });
-            const chatSession = ai.chats.create({
-                model: 'gemini-2.5-flash',
-                config: {
-                    systemInstruction: 'You are AI Dost, a friendly and helpful AI assistant for students learning freelancer skills. Your answers should be encouraging, clear, and in Hinglish. You have access to Google Search, so use it for recent or specific topics.',
-                    tools: [{ googleSearch: {} }]
-                },
-            });
+            let chatSession: Chat | null = null;
+            let lastError: unknown = null;
+
+            for (const model of CHAT_MODELS) {
+                try {
+                    chatSession = ai.chats.create({
+                        model,
+                        config: {
+                            systemInstruction: 'You are AI Dost, a friendly and helpful AI assistant for students learning freelancer skills. Your answers should be encouraging, clear, and in Hinglish. You have access to Google Search, so use it for recent or specific topics.',
+                            tools: [{ googleSearch: {} }]
+                        },
+                    });
+                    break;
+                } catch (err) {
+                    lastError = err;
+                }
+            }
+
+            if (!chatSession) {
+                throw lastError ?? new Error('No supported chat model available.');
+            }
+
             setChat(chatSession);
             setMessages([{ sender: 'bot', text: 'Namaste! Main hoon AI Dost, ab Google Search ki shakti ke saath. Aapka koi bhi sawal ho, yahan pooch sakte hain.' }]);
         } catch (e: any) {
@@ -198,7 +223,7 @@ const QnABotPage: React.FC = () => {
                                                     className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full ios-glass text-[10px] font-black uppercase tracking-wider text-brand-accent hover:bg-brand-accent hover:text-white transition-all"
                                                 >
                                                     <ExternalLink size={10} />
-                                                    {new URL(source.uri).hostname.replace('www.', '')}
+                                                    {safeHostname(source.uri)}
                                                 </a>
                                             ))}
                                         </motion.div>
