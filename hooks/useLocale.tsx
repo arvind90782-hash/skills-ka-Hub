@@ -82,6 +82,11 @@ const translations: Record<SupportedUiLanguage, TranslationMap> = {
     'auth.errorFailed': 'Authentication fail ho gaya.',
     'auth.passwordPlaceholder': 'Minimum 6 characters',
     'auth.wait': 'Please wait...',
+    'auth.or': 'ya',
+    'auth.forgotPassword': 'Forgot password?',
+    'auth.google': 'Google se continue karo',
+    'auth.resetNeedEmail': 'Reset link bhejne ke liye pehle email daalo.',
+    'auth.resetSent': 'Password reset email bhej diya. Inbox check karo.',
 
     'error.title': 'Arre! Kuch gadbad ho gayi.',
 
@@ -241,6 +246,11 @@ const translations: Record<SupportedUiLanguage, TranslationMap> = {
     'auth.errorFailed': 'Authentication failed.',
     'auth.passwordPlaceholder': 'Minimum 6 characters',
     'auth.wait': 'Please wait...',
+    'auth.or': 'or',
+    'auth.forgotPassword': 'Forgot password?',
+    'auth.google': 'Continue with Google',
+    'auth.resetNeedEmail': 'Enter your email first to get reset link.',
+    'auth.resetSent': 'Password reset email sent. Check your inbox.',
 
     'error.title': 'Something went wrong.',
 

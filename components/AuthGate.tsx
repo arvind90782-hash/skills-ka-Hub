@@ -1,17 +1,18 @@
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogIn, UserPlus, ShieldCheck, Sparkles } from 'lucide-react';
+import { LogIn, UserPlus, ShieldCheck, Sparkles, KeyRound, Chrome } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useLocale } from '../hooks/useLocale';
 
 const AuthGate: React.FC = () => {
-  const { signIn, signUp, authReady } = useAuth();
+  const { signIn, signUp, signInWithGoogle, resetPassword, authReady } = useAuth();
   const { languageName, t } = useLocale();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const title = useMemo(
     () => (mode === 'login' ? t('auth.loginTitle') : t('auth.signupTitle')),
@@ -20,12 +21,13 @@ const AuthGate: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setNotice(null);
     if (!email.trim() || !password.trim()) {
       setError(t('auth.errorRequired'));
       return;
     }
 
-    if (password.length < 6) {
+    if (mode === 'signup' && password.length < 6) {
       setError(t('auth.errorPasswordMin'));
       return;
     }
@@ -38,6 +40,41 @@ const AuthGate: React.FC = () => {
       } else {
         await signUp(email.trim(), password);
       }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : t('auth.errorFailed');
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleAuth = async () => {
+    setError(null);
+    setNotice(null);
+    setLoading(true);
+    try {
+      await signInWithGoogle();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : t('auth.errorFailed');
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      setError(t('auth.resetNeedEmail'));
+      setNotice(null);
+      return;
+    }
+
+    setError(null);
+    setNotice(null);
+    setLoading(true);
+    try {
+      await resetPassword(email.trim());
+      setNotice(t('auth.resetSent'));
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t('auth.errorFailed');
       setError(message);
@@ -126,6 +163,18 @@ const AuthGate: React.FC = () => {
               placeholder={t('auth.passwordPlaceholder')}
               className="w-full rounded-2xl border border-brand-text-secondary/20 bg-brand-primary/60 px-4 py-3 text-brand-text outline-none transition focus:border-brand-accent/40"
             />
+            {mode === 'login' && (
+              <button
+                type="button"
+                onClick={() => {
+                  void handleForgotPassword();
+                }}
+                className="mt-3 inline-flex items-center gap-2 text-xs font-bold text-brand-accent hover:underline"
+              >
+                <KeyRound size={14} />
+                {t('auth.forgotPassword')}
+              </button>
+            )}
           </div>
 
           <button
@@ -136,9 +185,37 @@ const AuthGate: React.FC = () => {
             {mode === 'login' ? <LogIn size={18} /> : <UserPlus size={18} />}
             {loading ? t('auth.wait') : title}
           </button>
+
+          <div className="flex items-center gap-3 py-1">
+            <div className="h-px flex-1 bg-brand-text-secondary/20" />
+            <span className="text-xs font-semibold uppercase tracking-widest text-brand-text-secondary">{t('auth.or')}</span>
+            <div className="h-px flex-1 bg-brand-text-secondary/20" />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              void handleGoogleAuth();
+            }}
+            disabled={loading}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-brand-text-secondary/20 bg-brand-primary/60 px-6 py-3 font-bold text-brand-text transition hover:border-brand-accent/40 hover:bg-brand-primary disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Chrome size={18} />
+            {t('auth.google')}
+          </button>
         </form>
 
         <AnimatePresence>
+          {notice && (
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="mt-4 rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-300"
+            >
+              {notice}
+            </motion.p>
+          )}
           {error && (
             <motion.p
               initial={{ opacity: 0, y: 10 }}

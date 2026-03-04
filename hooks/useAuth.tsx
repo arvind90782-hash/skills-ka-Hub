@@ -1,8 +1,11 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import {
   createUserWithEmailAndPassword,
+  GoogleAuthProvider,
   onAuthStateChanged,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
+  signInWithPopup,
   signOut,
   type User,
 } from 'firebase/auth';
@@ -18,6 +21,8 @@ interface AuthContextType {
   authReady: boolean;
   signUp: (email: string, password: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   signOutUser: () => Promise<void>;
 }
 
@@ -32,6 +37,36 @@ const parseAdminEmails = () => {
 };
 
 const ADMIN_EMAILS = parseAdminEmails();
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: 'select_account' });
+
+const getAuthErrorMessage = (error: unknown, fallback: string): string => {
+  const code = typeof error === 'object' && error && 'code' in error ? String((error as any).code) : '';
+
+  switch (code) {
+    case 'auth/invalid-email':
+      return 'Email format sahi nahi hai.';
+    case 'auth/user-not-found':
+    case 'auth/invalid-credential':
+      return 'Is email/password se account nahi mila.';
+    case 'auth/wrong-password':
+      return 'Password galat hai.';
+    case 'auth/email-already-in-use':
+      return 'Is email se account already bana hua hai.';
+    case 'auth/weak-password':
+      return 'Password weak hai. Thoda strong password use karo.';
+    case 'auth/popup-closed-by-user':
+      return 'Google popup close ho gaya. Dobara try karo.';
+    case 'auth/popup-blocked':
+      return 'Popup block ho gaya. Browser me popups allow karo.';
+    case 'auth/operation-not-allowed':
+      return 'Google login abhi Firebase me enabled nahi hai.';
+    case 'auth/too-many-requests':
+      return 'Bahut zyada attempts ho gaye. Thodi der baad try karo.';
+    default:
+      return fallback;
+  }
+};
 
 const upsertUserProfile = async (user: User, isSignup = false) => {
   if (!firestoreDb) {
@@ -81,9 +116,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error('Firebase auth not configured');
     }
 
-    const cred = await createUserWithEmailAndPassword(firebaseAuth, email, password);
-    await upsertUserProfile(cred.user, true);
-    await logAuthEvent('signup', { targetEmail: email.toLowerCase() });
+    try {
+      const cred = await createUserWithEmailAndPassword(firebaseAuth, email, password);
+      await upsertUserProfile(cred.user, true);
+      await logAuthEvent('signup', { targetEmail: email.toLowerCase(), method: 'password' });
+    } catch (error) {
+      throw new Error(getAuthErrorMessage(error, 'Signup fail ho gaya.'));
+    }
   };
 
   const signIn = async (email: string, password: string) => {
@@ -91,9 +130,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error('Firebase auth not configured');
     }
 
-    const cred = await signInWithEmailAndPassword(firebaseAuth, email, password);
-    await upsertUserProfile(cred.user, false);
-    await logAuthEvent('login', { targetEmail: email.toLowerCase() });
+    try {
+      const cred = await signInWithEmailAndPassword(firebaseAuth, email, password);
+      await upsertUserProfile(cred.user, false);
+      await logAuthEvent('login', { targetEmail: email.toLowerCase(), method: 'password' });
+    } catch (error) {
+      throw new Error(getAuthErrorMessage(error, 'Login fail ho gaya.'));
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    if (!firebaseAuth) {
+      throw new Error('Firebase auth not configured');
+    }
+
+    try {
+      const cred = await signInWithPopup(firebaseAuth, googleProvider);
+      const userEmail = cred.user.email?.toLowerCase() ?? '';
+      const isSignup = cred.user.metadata.creationTime === cred.user.metadata.lastSignInTime;
+      await upsertUserProfile(cred.user, isSignup);
+      await logAuthEvent(isSignup ? 'signup' : 'login', {
+        targetEmail: userEmail,
+        method: 'google',
+      });
+    } catch (error) {
+      throw new Error(getAuthErrorMessage(error, 'Google login fail ho gaya.'));
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    if (!firebaseAuth) {
+      throw new Error('Firebase auth not configured');
+    }
+
+    try {
+      await sendPasswordResetEmail(firebaseAuth, email);
+    } catch (error) {
+      throw new Error(getAuthErrorMessage(error, 'Password reset email bhejne me issue aaya.'));
+    }
   };
 
   const signOutUser = async () => {
@@ -117,6 +191,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       authReady: isFirebaseConfigured,
       signUp,
       signIn,
+      signInWithGoogle,
+      resetPassword,
       signOutUser,
     };
   }, [user, loading]);
