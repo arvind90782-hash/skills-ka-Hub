@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, ArrowLeft, Bot, User, Search, Loader2, ExternalLink, Sparkles } from 'lucide-react';
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 import { getFriendlyAiErrorMessage } from '../services/geminiService';
+import { useLocale } from '../hooks/useLocale';
+import { logUsageEvent } from '../services/analyticsService';
 
 interface GroundingSource {
     uri: string;
@@ -33,6 +35,7 @@ const QnABotPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
+    const { languageName } = useLocale();
 
     useEffect(() => {
         try {
@@ -50,7 +53,7 @@ const QnABotPage: React.FC = () => {
                     chatSession = ai.chats.create({
                         model,
                         config: {
-                            systemInstruction: 'You are AI Dost, a friendly and helpful AI assistant for students learning freelancer skills. Your answers should be encouraging, clear, and in Hinglish. You have access to Google Search, so use it for recent or specific topics.',
+                            systemInstruction: `You are AI Dost, a friendly and helpful AI assistant for students learning freelancer skills. Your answers should be encouraging and clear. Use ${languageName} language preference unless user asks otherwise. You have access to Google Search, so use it for recent or specific topics.`,
                             tools: [{ googleSearch: {} }]
                         },
                     });
@@ -69,7 +72,7 @@ const QnABotPage: React.FC = () => {
         } catch (e: any) {
             setError(getFriendlyAiErrorMessage(e, 'Chat shuru karne me issue aa gaya. API key/billing ek baar check karo.'));
         }
-    }, []);
+    }, [languageName]);
 
     useEffect(() => {
         if (chatContainerRef.current) {
@@ -92,6 +95,7 @@ const QnABotPage: React.FC = () => {
         setMessages(prev => [...prev, userMessage, { sender: 'bot', text: '' }]);
 
         try {
+            void logUsageEvent('tool_action', { toolId: 'qna-bot', action: 'send_message' });
             const stream = await chat.sendMessageStream({ message: currentInput });
             
             for await (const chunk of stream) {

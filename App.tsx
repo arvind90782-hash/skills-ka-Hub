@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ThemeProvider } from './hooks/useTheme';
+import { LocaleProvider } from './hooks/useLocale';
+import { AuthProvider, useAuth } from './hooks/useAuth';
 import HomePage from './pages/HomePage';
 import CategoryPage from './pages/CategoryPage';
 import Header from './components/Header';
@@ -11,7 +13,35 @@ import ImageAnimatorPage from './pages/ImageAnimatorPage';
 import QnABotPage from './pages/QnABotPage';
 import ImageGeneratorPage from './pages/ImageGeneratorPage';
 import RocketWriterPage from './pages/RocketWriterPage';
+import AdminPanelPage from './pages/AdminPanelPage';
 import CinematicIntro from './components/CinematicIntro';
+import Loading from './components/Loading';
+import AuthGate from './components/AuthGate';
+import { TOOLS } from './constants';
+import { logUsageEvent } from './services/analyticsService';
+
+const TOOL_PATH_MAP = new Map(TOOLS.map((tool) => [tool.path, tool.id]));
+
+const RouteActivityTracker: React.FC = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    const path = location.pathname;
+    void logUsageEvent('route_view', { path });
+
+    const toolId = TOOL_PATH_MAP.get(path);
+    if (toolId) {
+      void logUsageEvent('tool_open', { toolId, path });
+    }
+
+    if (path.startsWith('/category/')) {
+      const categoryId = path.split('/category/')[1] || 'unknown';
+      void logUsageEvent('tool_open', { toolId: `course-${categoryId}`, path });
+    }
+  }, [location.pathname]);
+
+  return null;
+};
 
 const AnimatedRoutes: React.FC = () => {
   const location = useLocation();
@@ -40,13 +70,14 @@ const AnimatedRoutes: React.FC = () => {
           <Route path="/qna-bot" element={<QnABotPage />} />
           <Route path="/image-generator" element={<ImageGeneratorPage />} />
           <Route path="/rocket-writer" element={<RocketWriterPage />} />
+          <Route path="/admin" element={<AdminPanelPage />} />
         </Routes>
       </motion.div>
     </AnimatePresence>
   );
 };
 
-const App: React.FC = () => {
+const AppLayout: React.FC = () => {
   const [showIntro, setShowIntro] = useState(false);
   const watermarkText = 'Made by Editor Nishant';
 
@@ -57,31 +88,55 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <ThemeProvider>
-      <HashRouter>
-        <div className="min-h-screen bg-brand-primary font-sans text-brand-text transition-colors duration-700 selection:bg-brand-accent/30">
-          <Header onLogoClick={() => setShowIntro(true)} />
+    <div className="min-h-screen bg-brand-primary font-sans text-brand-text transition-colors duration-700 selection:bg-brand-accent/30">
+      <Header onLogoClick={() => setShowIntro(true)} />
 
-          <main className="mx-auto max-w-7xl overflow-x-hidden px-4 py-8 sm:px-6 lg:px-8">
-            <AnimatedRoutes />
-          </main>
+      <RouteActivityTracker />
 
-          <div
-            className="pointer-events-none fixed bottom-4 right-4 z-50 rounded-md border border-brand-border/50 bg-brand-secondary/60 px-3 py-1 text-xs font-medium tracking-wide text-brand-text/70 shadow-sm backdrop-blur-sm"
-            aria-hidden="true"
-          >
-            {watermarkText}
-          </div>
+      <main className="mx-auto max-w-7xl overflow-x-hidden px-4 py-8 sm:px-6 lg:px-8">
+        <AnimatedRoutes />
+      </main>
 
-          <footer style={{ textAlign: 'center', padding: '20px', fontSize: '14px', color: '#888' }}>
-            &copy; 2026 Skills Ka Hub • <b>{watermarkText}</b>
-          </footer>
+      <div
+        className="pointer-events-none fixed bottom-4 right-4 z-50 rounded-md border border-brand-border/50 bg-brand-secondary/60 px-3 py-1 text-xs font-medium tracking-wide text-brand-text/70 shadow-sm backdrop-blur-sm"
+        aria-hidden="true"
+      >
+        {watermarkText}
+      </div>
 
-          <CinematicIntro isOpen={showIntro} onClose={() => setShowIntro(false)} />
-        </div>
-      </HashRouter>
-    </ThemeProvider>
+      <footer style={{ textAlign: 'center', padding: '20px', fontSize: '14px', color: '#888' }}>
+        &copy; 2026 Skills Ka Hub • <b>{watermarkText}</b>
+      </footer>
+
+      <CinematicIntro isOpen={showIntro} onClose={() => setShowIntro(false)} />
+    </div>
   );
 };
+
+const AppBody: React.FC = () => {
+  const { loading, isAuthenticated } = useAuth();
+
+  if (loading) {
+    return <Loading message="Account check ho raha hai..." />;
+  }
+
+  if (!isAuthenticated) {
+    return <AuthGate />;
+  }
+
+  return <AppLayout />;
+};
+
+const App: React.FC = () => (
+  <ThemeProvider>
+    <LocaleProvider>
+      <AuthProvider>
+        <HashRouter>
+          <AppBody />
+        </HashRouter>
+      </AuthProvider>
+    </LocaleProvider>
+  </ThemeProvider>
+);
 
 export default App;

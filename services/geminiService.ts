@@ -1,5 +1,6 @@
 import { GoogleGenAI, Modality, Type } from '@google/genai';
 import type { GeneratedContent, SubPage, ContentBlock } from '../types';
+import { logUsageEvent } from './analyticsService';
 
 const getApiKey = (): string => {
   const apiKey =
@@ -35,6 +36,38 @@ const toStringArray = (value: unknown, minLen = 1): string[] => {
   }
   const arr = value.filter(isNonEmptyString).map((entry) => entry.trim());
   return arr.length >= minLen ? arr : [];
+};
+
+const getPreferredLanguageHint = (): string => {
+  if (typeof window === 'undefined') {
+    return 'English';
+  }
+
+  const code = localStorage.getItem('app_language') || 'en';
+  const labels: Record<string, string> = {
+    en: 'English',
+    hi: 'Hindi',
+    bn: 'Bangla',
+    ta: 'Tamil',
+    te: 'Telugu',
+    mr: 'Marathi',
+    gu: 'Gujarati',
+    pa: 'Punjabi',
+    ur: 'Urdu',
+    es: 'Spanish',
+    fr: 'French',
+    de: 'German',
+    pt: 'Portuguese',
+    ru: 'Russian',
+    ar: 'Arabic',
+    tr: 'Turkish',
+    id: 'Indonesian',
+    ja: 'Japanese',
+    ko: 'Korean',
+    zh: 'Chinese',
+  };
+
+  return labels[code] ?? 'English';
 };
 
 const isModelNotFoundError = (error: unknown): boolean => {
@@ -532,6 +565,7 @@ export const getFriendlyAiErrorMessage = (error: unknown, fallbackMessage: strin
 
 export const generateSkillContent = async (skillName: string): Promise<GeneratedContent> => {
   const cacheKey = `skill-content-${skillName}`;
+  const preferredLanguage = getPreferredLanguageHint();
 
   try {
     const cachedContent = sessionStorage.getItem(cacheKey);
@@ -550,10 +584,12 @@ export const generateSkillContent = async (skillName: string): Promise<Generated
 
   try {
     const ai = getAiClient();
+    void logUsageEvent('tool_action', { toolId: 'course-generator', action: 'generate_course', skillName });
     const prompt = `
-      Ek freelance skill "${skillName}" ke liye ek bahut engaging learning module Hinglish (Hindi + English) me banao.
+      Ek freelance skill "${skillName}" ke liye ek bahut engaging learning module banao.
       Ye module Indian students ke liye fun, visual aur relatable hona chahiye.
       Total 10 detailed sub-pages banao.
+      Output language preference: ${preferredLanguage}
 
       Har page me 5-6 alag block-types ki variety do:
       - 'heading', 'paragraph', 'tip', 'template', 'benefits', 'infographic', 'funFact'
@@ -617,6 +653,7 @@ export const generateSkillContent = async (skillName: string): Promise<Generated
 export const analyzeImage = async (prompt: string, imageBase64: string, mimeType: string): Promise<string> => {
   try {
     const ai = getAiClient();
+    void logUsageEvent('tool_action', { toolId: 'image-analyzer', action: 'analyze' });
     const imagePart = { inlineData: { data: imageBase64, mimeType } };
     const textPart = { text: prompt };
     let response: any = null;
@@ -652,6 +689,7 @@ export const analyzeImage = async (prompt: string, imageBase64: string, mimeType
 export const analyzeVideo = async (prompt: string, videoBase64: string, mimeType: string): Promise<string> => {
   try {
     const ai = getAiClient();
+    void logUsageEvent('tool_action', { toolId: 'video-analyzer', action: 'analyze' });
     const videoPart = { inlineData: { data: videoBase64, mimeType } };
     const textPart = { text: prompt };
     let response: any = null;
@@ -694,6 +732,7 @@ export const animateImage = async (
   try {
     const apiKey = getApiKey();
     const ai = getAiClient();
+    void logUsageEvent('tool_action', { toolId: 'image-animator', action: 'animate' });
 
     onProgress('Video banana shuru ho raha hai...');
 
@@ -740,6 +779,7 @@ export const generateImage = async (
 ): Promise<{ imageUrl: string; altText: string }> => {
   try {
     const ai = getAiClient();
+    void logUsageEvent('tool_action', { toolId: 'image-generator', action: 'generate_image', imageSize });
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-image-preview',
       contents: { parts: [{ text: prompt }] },
@@ -778,6 +818,7 @@ export const generateImage = async (
 export const generateFastText = async (prompt: string) => {
   try {
     const ai = getAiClient();
+    void logUsageEvent('tool_action', { toolId: 'rocket-writer', action: 'generate_text' });
     let lastError: unknown = null;
 
     for (const model of FAST_TEXT_MODELS) {

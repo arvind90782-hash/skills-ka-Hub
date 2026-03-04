@@ -24,6 +24,7 @@
   --glass-bg: rgba(255, 255, 255, 0.7);
   --glass-border: rgba(0, 0, 0, 0.1);
   --card-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.08);
+  --ios-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .dark {
@@ -40,6 +41,16 @@
   body {
     @apply bg-brand-primary text-brand-text font-sans transition-colors duration-500;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    background-image:
+      radial-gradient(circle at 0% 0%, rgba(0, 122, 255, 0.12) 0%, transparent 30%),
+      radial-gradient(circle at 100% 100%, rgba(88, 86, 214, 0.12) 0%, transparent 30%);
+    background-attachment: fixed;
+    animation: iosFadeIn 500ms var(--ios-ease);
+  }
+
+  html {
+    scroll-behavior: smooth;
   }
 }
 
@@ -50,6 +61,7 @@
   
   .ios-card {
     @apply bg-brand-secondary rounded-[var(--radius-ios)] shadow-[var(--card-shadow)] border border-[var(--glass-border)];
+    transition: transform 300ms var(--ios-ease), box-shadow 300ms var(--ios-ease), background-color 300ms var(--ios-ease);
   }
 
   .ios-btn {
@@ -66,6 +78,17 @@
 
   .backface-hidden {
     backface-visibility: hidden;
+  }
+}
+
+@keyframes iosFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
