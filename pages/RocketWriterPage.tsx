@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { generateFastText } from '../services/geminiService';
 import { GenerateContentResponse } from '@google/genai';
@@ -19,8 +19,7 @@ const RocketWriterPage: React.FC = () => {
         }
     }, [result]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const runGeneration = useCallback(async () => {
         if (!prompt.trim() || isLoading) return;
 
         setIsLoading(true);
@@ -41,6 +40,11 @@ const RocketWriterPage: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
+    }, [isLoading, prompt]);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        await runGeneration();
     };
 
     return (
@@ -78,7 +82,7 @@ const RocketWriterPage: React.FC = () => {
 
             {error && (
                 <div className="mt-6">
-                    <ErrorMessage message={error} onRetry={() => handleSubmit(new Event('submit') as any)} />
+                    <ErrorMessage message={error} onRetry={() => { void runGeneration(); }} />
                 </div>
             )}
             

@@ -1,234 +1,526 @@
+import { GoogleGenAI, Modality, Type } from '@google/genai';
+import type { GeneratedContent, SubPage, ContentBlock } from '../types';
 
-import { GoogleGenAI, Type, Modality } from "@google/genai";
-import type { GeneratedContent } from '../types';
+const getApiKey = (): string => {
+  const apiKey =
+    process.env.API_KEY ||
+    process.env.GEMINI_API_KEY ||
+    (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_KEY);
 
-const getAiClient = () => {
-    // The key might be provided under multiple environment variable names
-    // depending on what the developer set in their .env file. Vite will replace
-    // `process.env.*` at build time using the values defined in vite.config.ts.
-    const API_KEY = process.env.API_KEY || process.env.GEMINI_API_KEY ||
-      // runtime fallback in case any code is executed where import.meta is available
-      (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_KEY);
-    if (!API_KEY) {
-      throw new Error("API_KEY environment variable not set. Add your Gemini key to .env");
-    }
-    return new GoogleGenAI({ apiKey: API_KEY });
-}
+  if (!apiKey) {
+    throw new Error('API key missing');
+  }
+
+  return apiKey;
+};
+
+const getAiClient = () => new GoogleGenAI({ apiKey: getApiKey() });
 
 const quizSchema = {
-    type: Type.OBJECT, properties: { type: { type: Type.STRING, enum: ['quiz'] }, question: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } }, correctAnswerIndex: { type: Type.INTEGER }, explanation: { type: Type.STRING } }, required: ['type', 'question', 'options', 'correctAnswerIndex', 'explanation']
+  type: Type.OBJECT,
+  properties: {
+    type: { type: Type.STRING, enum: ['quiz'] },
+    question: { type: Type.STRING },
+    options: { type: Type.ARRAY, items: { type: Type.STRING } },
+    correctAnswerIndex: { type: Type.INTEGER },
+    explanation: { type: Type.STRING },
+  },
+  required: ['type', 'question', 'options', 'correctAnswerIndex', 'explanation'],
 };
+
 const aiChallengeSchema = {
-    type: Type.OBJECT, properties: { type: { type: Type.STRING, enum: ['aiChallenge'] }, challenge: { type: Type.STRING }, toolId: { type: Type.STRING, enum: ['image-analyzer', 'video-analyzer', 'image-animator', 'image-generator'] } }, required: ['type', 'challenge', 'toolId']
+  type: Type.OBJECT,
+  properties: {
+    type: { type: Type.STRING, enum: ['aiChallenge'] },
+    challenge: { type: Type.STRING },
+    toolId: {
+      type: Type.STRING,
+      enum: ['image-analyzer', 'video-analyzer', 'image-animator', 'image-generator'],
+    },
+  },
+  required: ['type', 'challenge', 'toolId'],
 };
+
 const pollSchema = {
-    type: Type.OBJECT, properties: { type: { type: Type.STRING, enum: ['poll'] }, question: { type: Type.STRING }, options: { type: Type.ARRAY, items: { type: Type.STRING } } }, required: ['type', 'question', 'options']
+  type: Type.OBJECT,
+  properties: {
+    type: { type: Type.STRING, enum: ['poll'] },
+    question: { type: Type.STRING },
+    options: { type: Type.ARRAY, items: { type: Type.STRING } },
+  },
+  required: ['type', 'question', 'options'],
 };
+
 const qAndASchema = {
-    type: Type.OBJECT, properties: { type: { type: Type.STRING, enum: ['qAndA'] }, question: { type: Type.STRING }, answer: { type: Type.STRING } }, required: ['type', 'question', 'answer']
+  type: Type.OBJECT,
+  properties: {
+    type: { type: Type.STRING, enum: ['qAndA'] },
+    question: { type: Type.STRING },
+    answer: { type: Type.STRING },
+  },
+  required: ['type', 'question', 'answer'],
 };
+
 const expertSaysSchema = {
-    type: Type.OBJECT, properties: { type: { type: Type.STRING, enum: ['expertSays'] }, quote: { type: Type.STRING }, expertName: { type: Type.STRING } }, required: ['type', 'quote', 'expertName']
+  type: Type.OBJECT,
+  properties: {
+    type: { type: Type.STRING, enum: ['expertSays'] },
+    quote: { type: Type.STRING },
+    expertName: { type: Type.STRING },
+  },
+  required: ['type', 'quote', 'expertName'],
 };
+
 const mythBusterSchema = {
-    type: Type.OBJECT, properties: { type: { type: Type.STRING, enum: ['mythBuster'] }, myth: { type: Type.STRING }, reality: { type: Type.STRING } }, required: ['type', 'myth', 'reality']
+  type: Type.OBJECT,
+  properties: {
+    type: { type: Type.STRING, enum: ['mythBuster'] },
+    myth: { type: Type.STRING },
+    reality: { type: Type.STRING },
+  },
+  required: ['type', 'myth', 'reality'],
 };
+
 const doAndDontSchema = {
-    type: Type.OBJECT, properties: { type: { type: Type.STRING, enum: ['doAndDont'] }, dos: { type: Type.ARRAY, items: { type: Type.STRING } }, donts: { type: Type.ARRAY, items: { type: Type.STRING } } }, required: ['type', 'dos', 'donts']
+  type: Type.OBJECT,
+  properties: {
+    type: { type: Type.STRING, enum: ['doAndDont'] },
+    dos: { type: Type.ARRAY, items: { type: Type.STRING } },
+    donts: { type: Type.ARRAY, items: { type: Type.STRING } },
+  },
+  required: ['type', 'dos', 'donts'],
 };
+
 const shockingFactSchema = {
-    type: Type.OBJECT, properties: { type: { type: Type.STRING, enum: ['shockingFact'] }, fact: { type: Type.STRING } }, required: ['type', 'fact']
+  type: Type.OBJECT,
+  properties: {
+    type: { type: Type.STRING, enum: ['shockingFact'] },
+    fact: { type: Type.STRING },
+  },
+  required: ['type', 'fact'],
 };
+
 const ideaCornerSchema = {
-    type: Type.OBJECT, properties: { type: { type: Type.STRING, enum: ['ideaCorner'] }, prompt: { type: Type.STRING } }, required: ['type', 'prompt']
+  type: Type.OBJECT,
+  properties: {
+    type: { type: Type.STRING, enum: ['ideaCorner'] },
+    prompt: { type: Type.STRING },
+  },
+  required: ['type', 'prompt'],
 };
+
 const flashcardSchema = {
-    type: Type.OBJECT, properties: { type: { type: Type.STRING, enum: ['flashcard'] }, front: { type: Type.STRING }, back: { type: Type.STRING } }, required: ['type', 'front', 'back']
+  type: Type.OBJECT,
+  properties: {
+    type: { type: Type.STRING, enum: ['flashcard'] },
+    front: { type: Type.STRING },
+    back: { type: Type.STRING },
+  },
+  required: ['type', 'front', 'back'],
 };
+
 const basicTextBlockSchema = {
-    type: Type.OBJECT, properties: { type: { type: Type.STRING, enum: ['heading', 'paragraph', 'tip', 'template', 'benefits', 'infographic', 'funFact'] }, text: { type: Type.STRING } }, required: ['type', 'text']
+  type: Type.OBJECT,
+  properties: {
+    type: { type: Type.STRING, enum: ['heading', 'paragraph', 'tip', 'template', 'benefits', 'infographic', 'funFact'] },
+    text: { type: Type.STRING },
+  },
+  required: ['type', 'text'],
 };
 
 const contentSchema = {
-  oneOf: [ basicTextBlockSchema, quizSchema, aiChallengeSchema, pollSchema, qAndASchema, expertSaysSchema, mythBusterSchema, doAndDontSchema, shockingFactSchema, ideaCornerSchema, flashcardSchema ],
+  oneOf: [
+    basicTextBlockSchema,
+    quizSchema,
+    aiChallengeSchema,
+    pollSchema,
+    qAndASchema,
+    expertSaysSchema,
+    mythBusterSchema,
+    doAndDontSchema,
+    shockingFactSchema,
+    ideaCornerSchema,
+    flashcardSchema,
+  ],
 };
 
 const subPageSchema = {
   type: Type.OBJECT,
   properties: {
-    title: { type: Type.STRING, description: "A catchy title for the sub-page." },
-    imageSuggestion: { type: Type.STRING, description: "A descriptive suggestion for a relevant image or illustration (e.g., 'A student looking confused at code')." },
-    content: { type: Type.ARRAY, items: contentSchema, description: "An array of various content blocks that make up the page." },
-    motionStoryboard: { type: Type.STRING, description: "A short, creative idea for a motion graphic or animation to be used on this page (e.g., 'A lightbulb icon appears and glows when a tip is shown')." },
+    title: { type: Type.STRING, description: 'A catchy title for the sub-page.' },
+    imageSuggestion: {
+      type: Type.STRING,
+      description: "A descriptive suggestion for a relevant image or illustration (e.g., 'A student looking confused at code').",
+    },
+    content: { type: Type.ARRAY, items: contentSchema, description: 'An array of various content blocks that make up the page.' },
+    motionStoryboard: {
+      type: Type.STRING,
+      description: "A short, creative idea for a motion graphic or animation to be used on this page (e.g., 'A lightbulb icon appears and glows when a tip is shown').",
+    },
   },
-  required: ['title', 'imageSuggestion', 'content', 'motionStoryboard']
+  required: ['title', 'imageSuggestion', 'content', 'motionStoryboard'],
 };
 
 const moduleSchema = {
   type: Type.OBJECT,
   properties: {
-    skillName: { type: Type.STRING, description: "The name of the skill being taught." },
-    subPages: { type: Type.ARRAY, items: subPageSchema, description: "An array of 10 sub-pages for the learning module." },
+    skillName: { type: Type.STRING, description: 'The name of the skill being taught.' },
+    subPages: { type: Type.ARRAY, items: subPageSchema, description: 'An array of 10 sub-pages for the learning module.' },
   },
-  required: ['skillName', 'subPages']
+  required: ['skillName', 'subPages'],
 };
 
-export const generateSkillContent = async (skillName: string): Promise<GeneratedContent | null> => {
+const FALLBACK_BLOCK: ContentBlock = {
+  type: 'paragraph',
+  text: 'Is page ka content thoda unstable tha. Next/previous par tap karke continue karein.',
+};
+
+const normalizeSubPages = (rawSubPages: unknown): SubPage[] => {
+  if (!Array.isArray(rawSubPages)) {
+    return [];
+  }
+
+  const cleaned = rawSubPages.map((subPage, index) => {
+    const entry = subPage as any;
+    const title = typeof entry?.title === 'string' && entry.title.trim() ? entry.title.trim() : `Section ${index + 1}`;
+    const imageSuggestion =
+      typeof entry?.imageSuggestion === 'string' && entry.imageSuggestion.trim()
+        ? entry.imageSuggestion.trim()
+        : 'Freelance student learning setup';
+    const motionStoryboard =
+      typeof entry?.motionStoryboard === 'string' && entry.motionStoryboard.trim()
+        ? entry.motionStoryboard.trim()
+        : 'Smooth reveal animation with highlighted key points.';
+
+    const rawBlocks = Array.isArray(entry?.content) ? entry.content : [];
+    const content = rawBlocks.filter((block: any) => block && typeof block === 'object' && typeof block.type === 'string');
+
+    return {
+      title,
+      imageSuggestion,
+      motionStoryboard,
+      content: content.length > 0 ? content : [FALLBACK_BLOCK],
+    } as SubPage;
+  });
+
+  return cleaned.filter((page) => Array.isArray(page.content) && page.content.length > 0);
+};
+
+const normalizeGeneratedContent = (skillName: string, payload: unknown): GeneratedContent => {
+  const data = payload as any;
+  const subPages = normalizeSubPages(data?.subPages);
+
+  return {
+    skillName: typeof data?.skillName === 'string' && data.skillName.trim() ? data.skillName.trim() : skillName,
+    subPages: subPages.length > 0
+      ? subPages
+      : [
+          {
+            title: `${skillName} Starter`,
+            imageSuggestion: 'A student working on a laptop',
+            motionStoryboard: 'Subtle fade-in animation for key lessons.',
+            content: [FALLBACK_BLOCK],
+          },
+        ],
+  };
+};
+
+const errorToString = (error: unknown): string => {
+  if (typeof error === 'string') {
+    return error;
+  }
+
+  if (error instanceof Error) {
+    return error.message || String(error);
+  }
+
+  if (error && typeof error === 'object' && 'message' in error) {
+    const maybeMessage = (error as any).message;
+    if (typeof maybeMessage === 'string') {
+      return maybeMessage;
+    }
+  }
+
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
+};
+
+export const getFriendlyAiErrorMessage = (error: unknown, fallbackMessage: string): string => {
+  const raw = errorToString(error);
+  const normalized = raw.toLowerCase();
+
+  if (normalized.includes('api key missing') || normalized.includes('api_key environment variable not set')) {
+    return 'API key set nahi hai. .env me valid Gemini API key add karke dobara deploy karo.';
+  }
+
+  if (
+    normalized.includes('resource_exhausted') ||
+    normalized.includes('quota exceeded') ||
+    normalized.includes('"code":429') ||
+    normalized.includes('rate limit') ||
+    normalized.includes('too many requests')
+  ) {
+    return 'Aaj ka Gemini quota/rate-limit exceed ho gaya hai. Thodi der baad try karo ya billing/plan check karo.';
+  }
+
+  if (
+    normalized.includes('requested entity was not found') ||
+    normalized.includes('permission_denied') ||
+    normalized.includes('unauthenticated') ||
+    normalized.includes('api key not valid') ||
+    normalized.includes('invalid api key')
+  ) {
+    return 'API key invalid ya unauthorized hai. Sahi key select karke phir try karo.';
+  }
+
+  if (
+    normalized.includes('failed to fetch') ||
+    normalized.includes('networkerror') ||
+    normalized.includes('network error') ||
+    normalized.includes('fetch failed')
+  ) {
+    return 'Network issue aa gaya. Internet check karo aur phir try karo.';
+  }
+
+  if (raw.includes('{"error"') || raw.length > 300) {
+    return fallbackMessage;
+  }
+
+  return raw || fallbackMessage;
+};
+
+export const generateSkillContent = async (skillName: string): Promise<GeneratedContent> => {
   const cacheKey = `skill-content-${skillName}`;
 
   try {
     const cachedContent = sessionStorage.getItem(cacheKey);
     if (cachedContent) {
-      console.log(`Loading "${skillName}" content from cache.`);
-      return JSON.parse(cachedContent);
+      const parsedCache = JSON.parse(cachedContent);
+      return normalizeGeneratedContent(skillName, parsedCache);
     }
   } catch (error) {
-    console.warn("Could not access session storage for caching.", error);
+    console.warn('Could not read cached skill content.', error);
+    try {
+      sessionStorage.removeItem(cacheKey);
+    } catch {
+      // no-op
+    }
   }
-  
-  console.log(`Generating new content for "${skillName}" from API.`);
+
   try {
     const ai = getAiClient();
     const prompt = `
-      Ek freelance skill "${skillName}" ke liye ek અત્યંત engaging (extremely engaging) learning module generate karo, jo Hinglish (Hindi + English) mein ho.
-      Ye module Indian students ke liye super fun, visual, aur relatable hona chahiye. Plain text se bacho.
-      Total 10 detailed sub-pages generate karo.
+      Ek freelance skill "${skillName}" ke liye ek bahut engaging learning module Hinglish (Hindi + English) me banao.
+      Ye module Indian students ke liye fun, visual aur relatable hona chahiye.
+      Total 10 detailed sub-pages banao.
 
-      Har page ko in sabhi interactive elements se bhar do. Har page par kam se kam 5-6 alag-alag block types istemaal karo. Bohot variety chahiye:
+      Har page me 5-6 alag block-types ki variety do:
       - 'heading', 'paragraph', 'tip', 'template', 'benefits', 'infographic', 'funFact'
-      - 'quiz': Interesting sawal, 4 options, sahi jawab, aur explanation.
-      - 'aiChallenge': Creative task jo user ko app ke AI tools ('image-analyzer', 'video-analyzer', 'image-animator', 'image-generator') use karne ke liye challenge kare.
-      - 'poll': Ek interesting question jiske multiple options ho.
-      - 'qAndA': Common student doubts ko solve karo.
-      - 'expertSays': Ek virtual expert ka quote.
-      - 'mythBuster': Skill se jude myths ko bust karo.
-      - 'doAndDont': Quick tips in a list format.
-      - 'shockingFact': Ek dum unexpected fact.
-      - 'ideaCorner': User ko kuch naya sochne ke liye inspire karo.
-      - 'flashcard': Ek quick question (front) aur uska answer (back) jo user flip karke dekh sake. Fast learning ke liye best hai.
+      - 'quiz', 'aiChallenge', 'poll', 'qAndA', 'expertSays', 'mythBuster', 'doAndDont', 'shockingFact', 'ideaCorner', 'flashcard'
 
-      Content ko friendly, encouraging, aur bohot hi zyada interesting banao. Har page ek naya adventure lagna chahiye.
+      Tone friendly, actionable aur encouraging rakho.
     `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
-        responseMimeType: "application/json",
+        responseMimeType: 'application/json',
         responseSchema: moduleSchema,
       },
     });
 
     const jsonString = response.text;
-    if (!jsonString) { throw new Error("API returned no text."); }
-
-    const parsedJson = JSON.parse(jsonString);
-    
-    try {
-        sessionStorage.setItem(cacheKey, JSON.stringify(parsedJson));
-    } catch (error) {
-        console.warn("Could not save content to session storage.", error);
+    if (!jsonString) {
+      throw new Error('API returned no content text.');
     }
 
-    return parsedJson as GeneratedContent;
+    const parsedJson = JSON.parse(jsonString);
+    const normalizedContent = normalizeGeneratedContent(skillName, parsedJson);
 
+    try {
+      sessionStorage.setItem(cacheKey, JSON.stringify(normalizedContent));
+    } catch (error) {
+      console.warn('Could not cache generated skill content.', error);
+    }
+
+    return normalizedContent;
   } catch (error) {
-    console.error("Error generating content:", error);
-    return null;
+    console.error('Error generating skill content:', error);
+    throw new Error(
+      getFriendlyAiErrorMessage(
+        error,
+        'Course generate nahi ho paaya. Thodi der baad phir try karo.'
+      )
+    );
   }
 };
 
 export const analyzeImage = async (prompt: string, imageBase64: string, mimeType: string): Promise<string> => {
+  try {
     const ai = getAiClient();
     const imagePart = { inlineData: { data: imageBase64, mimeType } };
     const textPart = { text: prompt };
-    const response = await ai.models.generateContent({ model: 'gemini-3-pro-preview', contents: { parts: [textPart, imagePart] } });
-    return response.text ?? "Kuch samajh nahi aaya, phir se try karein.";
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: { parts: [textPart, imagePart] },
+    });
+    return response.text ?? 'Kuch samajh nahi aaya, phir se try karein.';
+  } catch (error) {
+    throw new Error(
+      getFriendlyAiErrorMessage(error, 'Image analysis me problem aa gayi. Thodi der baad phir try karo.')
+    );
+  }
 };
 
 export const analyzeVideo = async (prompt: string, videoBase64: string, mimeType: string): Promise<string> => {
+  try {
     const ai = getAiClient();
     const videoPart = { inlineData: { data: videoBase64, mimeType } };
     const textPart = { text: prompt };
-    const response = await ai.models.generateContent({ model: 'gemini-3-pro-preview', contents: { parts: [textPart, videoPart] } });
-    return response.text ?? "Video ajeeb thi, kuch samajh nahi aaya.";
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: { parts: [textPart, videoPart] },
+    });
+    return response.text ?? 'Video ajeeb thi, kuch samajh nahi aaya.';
+  } catch (error) {
+    throw new Error(
+      getFriendlyAiErrorMessage(error, 'Video analysis me problem aa gayi. Thodi der baad phir try karo.')
+    );
+  }
 };
 
-export const animateImage = async (prompt: string, imageBase64: string, mimeType: string, aspectRatio: '16:9' | '9:16', onProgress: (message: string) => void): Promise<string> => {
+export const animateImage = async (
+  prompt: string,
+  imageBase64: string,
+  mimeType: string,
+  aspectRatio: '16:9' | '9:16',
+  onProgress: (message: string) => void
+): Promise<string> => {
+  try {
+    const apiKey = getApiKey();
     const ai = getAiClient();
-    onProgress("Video banana shuru ho raha hai...");
-    let operation = await ai.models.generateVideos({ model: 'veo-3.1-fast-generate-preview', prompt, image: { imageBytes: imageBase64, mimeType }, config: { numberOfVideos: 1, resolution: '720p', aspectRatio } });
-    onProgress("Processing jaari hai... ismein kuch minute lag sakte hain.");
+
+    onProgress('Video banana shuru ho raha hai...');
+
+    let operation = await ai.models.generateVideos({
+      model: 'veo-3.1-fast-generate-preview',
+      prompt,
+      image: { imageBytes: imageBase64, mimeType },
+      config: { numberOfVideos: 1, resolution: '720p', aspectRatio },
+    });
+
+    onProgress('Processing jaari hai... ismein kuch minute lag sakte hain.');
+
     while (!operation.done) {
-      await new Promise(resolve => setTimeout(resolve, 10000));
-      const pollAi = getAiClient();
-      operation = await pollAi.operations.getVideosOperation({ operation });
+      await new Promise((resolve) => setTimeout(resolve, 10000));
+      operation = await ai.operations.getVideosOperation({ operation });
       const progress = (operation.metadata as any)?.progressPercentage ?? 0;
       onProgress(`Video ${Math.round(Number(progress))}% ban chuki hai...`);
     }
-    onProgress("Video taiyaar hai!");
+
+    onProgress('Video taiyaar hai!');
+
     const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
-    if (!downloadLink) { throw new Error("Video generate ho gayi, par link nahi mila."); }
-    const response = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
+    if (!downloadLink) {
+      throw new Error('Video generate ho gayi, par download link nahi mila.');
+    }
+
+    const response = await fetch(`${downloadLink}&key=${apiKey}`);
+    if (!response.ok) {
+      throw new Error(`Video download failed with status ${response.status}`);
+    }
+
     const blob = await response.blob();
     return URL.createObjectURL(blob);
+  } catch (error) {
+    throw new Error(
+      getFriendlyAiErrorMessage(error, 'Video animation me issue aa gaya. Thodi der baad phir try karo.')
+    );
+  }
 };
 
-export const generateImage = async (prompt: string, imageSize: '1K' | '2K' | '4K'): Promise<{ imageUrl: string; altText: string }> => {
+export const generateImage = async (
+  prompt: string,
+  imageSize: '1K' | '2K' | '4K'
+): Promise<{ imageUrl: string; altText: string }> => {
+  try {
     const ai = getAiClient();
     const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-image-preview',
-        contents: { parts: [{ text: prompt }] },
-        config: {
-            imageConfig: { imageSize, aspectRatio: "1:1" },
-            tools: [{ googleSearch: {} } as any],
-        },
+      model: 'gemini-3-pro-image-preview',
+      contents: { parts: [{ text: prompt }] },
+      config: {
+        imageConfig: { imageSize, aspectRatio: '1:1' },
+        tools: [{ googleSearch: {} } as any],
+      },
     });
 
     let imageUrl = '';
     let altText = 'Generated image';
 
     if (response.candidates && response.candidates.length > 0) {
-        for (const part of response.candidates[0].content.parts) {
-            if (part.inlineData) {
-                const base64EncodeString: string = part.inlineData.data;
-                imageUrl = `data:image/png;base64,${base64EncodeString}`;
-            } else if (part.text) {
-                altText = part.text;
-            }
+      for (const part of response.candidates[0].content.parts) {
+        if (part.inlineData) {
+          const base64EncodeString: string = part.inlineData.data;
+          imageUrl = `data:image/png;base64,${base64EncodeString}`;
+        } else if (part.text) {
+          altText = part.text;
         }
+      }
     }
-    
+
     if (!imageUrl) {
-        throw new Error("Image generate nahi ho paayi. Kuch aur try karein.");
+      throw new Error('Image generate nahi ho paayi. Kuch aur prompt try karein.');
     }
-    
+
     return { imageUrl, altText };
+  } catch (error) {
+    throw new Error(
+      getFriendlyAiErrorMessage(error, 'Image generation me issue aa gaya. Thodi der baad phir try karo.')
+    );
+  }
 };
 
-export const generateFastText = (prompt: string) => {
+export const generateFastText = async (prompt: string) => {
+  try {
     const ai = getAiClient();
     return ai.models.generateContentStream({
-        model: 'gemini-2.5-flash-lite-latest',
-        contents: prompt,
+      model: 'gemini-2.5-flash-lite-latest',
+      contents: prompt,
     });
+  } catch (error) {
+    throw new Error(
+      getFriendlyAiErrorMessage(error, 'Text generation abhi fail ho gaya. Thodi der baad phir try karo.')
+    );
+  }
 };
 
 export const generateSpeech = async (text: string): Promise<string> => {
+  try {
     const ai = getAiClient();
     const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-preview-tts",
-        contents: [{ parts: [{ text: `Please read this clearly: ${text}` }] }],
-        config: {
-            responseModalities: [Modality.AUDIO],
-            speechConfig: {
-                voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } },
-            },
+      model: 'gemini-2.5-flash-preview-tts',
+      contents: [{ parts: [{ text: `Please read this clearly: ${text}` }] }],
+      config: {
+        responseModalities: [Modality.AUDIO],
+        speechConfig: {
+          voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } },
         },
+      },
     });
+
     const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
     if (!base64Audio) {
-        throw new Error("Audio generate nahi ho paaya.");
+      throw new Error('Audio generate nahi ho paaya.');
     }
+
     return base64Audio;
+  } catch (error) {
+    throw new Error(
+      getFriendlyAiErrorMessage(error, 'Audio generation me issue aa gaya. Thodi der baad phir try karo.')
+    );
+  }
 };

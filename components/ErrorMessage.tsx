@@ -15,7 +15,7 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({ message, onRetry }) => {
         </svg>
       </div>
       <h2 className="text-2xl font-bold text-red-400 mb-2">Arre! Kuch gadbad ho gayi.</h2>
-      <p className="text-brand-text-secondary mb-6">{message}</p>
+      <p className="mb-6 max-w-3xl whitespace-pre-wrap break-words text-brand-text-secondary [overflow-wrap:anywhere]">{message}</p>
       {onRetry && (
         <button
           onClick={onRetry}
