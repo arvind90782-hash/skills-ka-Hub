@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, ArrowLeft, Bot, User, Search, Loader2, ExternalLink, Sparkles } from 'lucide-react';
 import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
+import { getFriendlyAiErrorMessage } from '../services/geminiService';
 
 interface GroundingSource {
     uri: string;
@@ -32,7 +33,7 @@ const QnABotPage: React.FC = () => {
             }
             const ai = new GoogleGenAI({ apiKey: API_KEY });
             const chatSession = ai.chats.create({
-                model: 'gemini-3-flash-preview',
+                model: 'gemini-2.5-flash',
                 config: {
                     systemInstruction: 'You are AI Dost, a friendly and helpful AI assistant for students learning freelancer skills. Your answers should be encouraging, clear, and in Hinglish. You have access to Google Search, so use it for recent or specific topics.',
                     tools: [{ googleSearch: {} }]
@@ -41,7 +42,7 @@ const QnABotPage: React.FC = () => {
             setChat(chatSession);
             setMessages([{ sender: 'bot', text: 'Namaste! Main hoon AI Dost, ab Google Search ki shakti ke saath. Aapka koi bhi sawal ho, yahan pooch sakte hain.' }]);
         } catch (e: any) {
-            setError(e.message || "Chat shuru karne mein dikkat aa rahi hai.");
+            setError(getFriendlyAiErrorMessage(e, 'Chat shuru karne me issue aa gaya. API key/billing ek baar check karo.'));
         }
     }, []);
 
@@ -90,7 +91,8 @@ const QnABotPage: React.FC = () => {
             }
 
         } catch (e: any) {
-            const errorMessage: Message = { sender: 'bot', text: "Sorry, kuch gadbad ho gayi. Thodi der baad try karein." };
+            const friendly = getFriendlyAiErrorMessage(e, 'Sorry, abhi AI response nahi de pa raha. Thodi der baad try karein.');
+            const errorMessage: Message = { sender: 'bot', text: friendly };
             setMessages(prev => [...prev.slice(0, -1), errorMessage]);
         } finally {
             setIsLoading(false);

@@ -175,6 +175,72 @@ const FALLBACK_BLOCK: ContentBlock = {
   text: 'Is page ka content thoda unstable tha. Next/previous par tap karke continue karein.',
 };
 
+const buildLocalCourseFallback = (skillName: string): GeneratedContent => ({
+  skillName,
+  subPages: [
+    {
+      title: `${skillName} Ka Starter Roadmap`,
+      imageSuggestion: `${skillName} learning roadmap with laptop and notes`,
+      motionStoryboard: 'Roadmap cards one-by-one slide in with glow.',
+      content: [
+        { type: 'heading', text: `${skillName} shuru kaise karein` },
+        { type: 'paragraph', text: `Aaj se aap ${skillName} ka practical safar start kar rahe ho. Daily 45-60 min focused practice rakho.` },
+        { type: 'tip', text: 'Random tutorials dekhne ke bajaye ek fixed 30-day plan follow karo.' },
+        { type: 'doAndDont', dos: ['Roz practice karo', 'Notes banao', 'Mini project publish karo'], donts: ['Sirf dekhte mat raho', 'Perfect hone ka wait mat karo'] },
+        { type: 'benefits', text: 'Consistency se 4-6 hafton me visible progress milti hai aur confidence grow hota hai.' },
+      ],
+    },
+    {
+      title: `Beginner Problems & Fixes`,
+      imageSuggestion: `Student solving common ${skillName} beginner issues`,
+      motionStoryboard: 'Problem icons shake, then solution ticks appear.',
+      content: [
+        { type: 'heading', text: 'Common mistakes jo beginners karte hain' },
+        { type: 'qAndA', question: 'Mujhe samajh aa jata hai, par khud se nahi ban pata. Kya karu?', answer: 'Tutorial complete karne ke baad bina video dekhe same cheez dobara banao.' },
+        { type: 'mythBuster', myth: `${skillName} sirf talented log kar sakte hain.`, reality: 'Talent se zyada system aur repetition kaam karta hai.' },
+        { type: 'poll', question: 'Aapka sabse bada blocker kya hai?', options: ['Time management', 'Practice consistency', 'Client confidence', 'Tool confusion'] },
+        { type: 'funFact', text: 'Top freelancers ka first portfolio piece aksar average hota hai, lekin woh publish zaroor karte hain.' },
+      ],
+    },
+    {
+      title: `Tools, Templates & Speed`,
+      imageSuggestion: `${skillName} tool stack and reusable templates`,
+      motionStoryboard: 'Tool badges pop in and template card flips.',
+      content: [
+        { type: 'heading', text: 'Fast workflow ke liye tool setup' },
+        { type: 'template', text: 'Client Brief Template:\\n1) Goal\\n2) Target audience\\n3) Deadline\\n4) Deliverables\\n5) Budget range' },
+        { type: 'infographic', text: 'Rule: 20% learning + 80% creating. Har naye concept ke baad ek micro output nikalo.' },
+        { type: 'ideaCorner', prompt: `Aaj ${skillName} me 1 simple service define karo jo 24 ghante me deliver ho sake.` },
+        { type: 'tip', text: 'Har project ka checklist banao. Quality aur speed dono improve honge.' },
+      ],
+    },
+    {
+      title: `Client Ready Execution`,
+      imageSuggestion: `Freelancer presenting ${skillName} work to client`,
+      motionStoryboard: 'Before/after cards reveal with smooth swipe.',
+      content: [
+        { type: 'heading', text: 'Client-facing output ka standard' },
+        { type: 'quiz', question: 'Client ko first message me kya bhejna best hai?', options: ['Sirf price', 'Generic hello', 'Short pitch + relevant sample + timeline', 'Long essay'], correctAnswerIndex: 2, explanation: 'Trust tab banta hai jab clarity + proof + timeline ek saath dete ho.' },
+        { type: 'expertSays', quote: 'Client clarity always beats raw creativity.', expertName: 'AI Mentor' },
+        { type: 'shockingFact', fact: 'Clear communication se close rate 2x tak improve ho sakta hai.' },
+        { type: 'flashcard', front: 'Golden Rule?', back: 'Deadline se pehle draft bhejo, final me changes fast ho jaate hain.' },
+      ],
+    },
+    {
+      title: `Growth Plan & Income Start`,
+      imageSuggestion: `${skillName} portfolio and freelancing growth chart`,
+      motionStoryboard: 'Growth chart line animates upward with spark points.',
+      content: [
+        { type: 'heading', text: `${skillName} se earning start roadmap` },
+        { type: 'paragraph', text: 'Portfolio me 5 strong samples rakho: 2 beginner-safe, 2 niche-focused, 1 premium quality.' },
+        { type: 'aiChallenge', challenge: 'Apne ek sample ka visual/story explain karne ke liye AI tool use karke better pitch banao.', toolId: 'image-analyzer' },
+        { type: 'benefits', text: 'Skill + portfolio + communication combo se first paying client milna realistic ho jata hai.' },
+        { type: 'tip', text: 'Roz 5 targeted outreach messages bhejo. Numbers game ko discipline se jeeta jata hai.' },
+      ],
+    },
+  ],
+});
+
 const normalizeSubPages = (rawSubPages: unknown): SubPage[] => {
   if (!Array.isArray(rawSubPages)) {
     return [];
@@ -277,6 +343,14 @@ export const getFriendlyAiErrorMessage = (error: unknown, fallbackMessage: strin
   }
 
   if (
+    normalized.includes('model') && normalized.includes('not found') ||
+    normalized.includes('unsupported model') ||
+    normalized.includes('does not support')
+  ) {
+    return 'Selected AI model ab available nahi hai. App ko stable model par update kiya gaya hai, page refresh karke phir try karo.';
+  }
+
+  if (
     normalized.includes('failed to fetch') ||
     normalized.includes('networkerror') ||
     normalized.includes('network error') ||
@@ -325,7 +399,7 @@ export const generateSkillContent = async (skillName: string): Promise<Generated
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-2.5-flash',
       contents: prompt,
       config: {
         responseMimeType: 'application/json',
@@ -349,13 +423,14 @@ export const generateSkillContent = async (skillName: string): Promise<Generated
 
     return normalizedContent;
   } catch (error) {
-    console.error('Error generating skill content:', error);
-    throw new Error(
-      getFriendlyAiErrorMessage(
-        error,
-        'Course generate nahi ho paaya. Thodi der baad phir try karo.'
-      )
-    );
+    console.error('Error generating skill content, using local fallback:', error);
+    const fallback = buildLocalCourseFallback(skillName);
+    try {
+      sessionStorage.setItem(cacheKey, JSON.stringify(fallback));
+    } catch {
+      // no-op
+    }
+    return fallback;
   }
 };
 
@@ -365,7 +440,7 @@ export const analyzeImage = async (prompt: string, imageBase64: string, mimeType
     const imagePart = { inlineData: { data: imageBase64, mimeType } };
     const textPart = { text: prompt };
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-2.5-flash',
       contents: { parts: [textPart, imagePart] },
     });
     return response.text ?? 'Kuch samajh nahi aaya, phir se try karein.';
@@ -382,7 +457,7 @@ export const analyzeVideo = async (prompt: string, videoBase64: string, mimeType
     const videoPart = { inlineData: { data: videoBase64, mimeType } };
     const textPart = { text: prompt };
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: 'gemini-2.5-flash',
       contents: { parts: [textPart, videoPart] },
     });
     return response.text ?? 'Video ajeeb thi, kuch samajh nahi aaya.';
