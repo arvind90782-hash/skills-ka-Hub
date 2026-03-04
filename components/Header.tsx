@@ -14,7 +14,7 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ onLogoClick }) => {
   const { theme, toggleTheme } = useTheme();
   const { user, isAdmin, signOutUser } = useAuth();
-  const { language, languages, setLanguage } = useLocale();
+  const { language, languages, setLanguage, t } = useLocale();
 
   return (
     <header className="sticky top-0 z-50 px-4 py-3 sm:px-6 lg:px-8">
@@ -26,7 +26,7 @@ const Header: React.FC<HeaderProps> = ({ onLogoClick }) => {
               whileTap={{ scale: 0.9 }}
               onClick={toggleTheme}
               className="p-2 rounded-full bg-brand-primary/50 text-brand-text hover:bg-brand-primary transition-colors"
-              aria-label="Toggle theme"
+              aria-label={t('header.toggleTheme')}
             >
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
@@ -53,7 +53,7 @@ const Header: React.FC<HeaderProps> = ({ onLogoClick }) => {
                 <Sparkles size={20} className="text-white" />
               </motion.div>
               <span className="text-xl font-bold tracking-tight text-brand-text group-hover:text-brand-accent transition-colors">
-                Skills Ka Adda
+                {t('header.brand')}
               </span>
             </div>
           </div>
@@ -63,7 +63,7 @@ const Header: React.FC<HeaderProps> = ({ onLogoClick }) => {
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
               className="rounded-full border border-brand-text-secondary/20 bg-brand-primary/40 px-3 py-1 text-xs font-semibold text-brand-text outline-none"
-              aria-label="Language selector"
+              aria-label={t('header.language')}
             >
               {languages.map((lang) => (
                 <option key={lang.code} value={lang.code}>
@@ -78,12 +78,12 @@ const Header: React.FC<HeaderProps> = ({ onLogoClick }) => {
                 className="inline-flex items-center gap-1 rounded-full bg-brand-accent/10 px-3 py-1 text-xs font-bold text-brand-accent"
               >
                 <ShieldCheck size={14} />
-                Admin
+                {t('header.admin')}
               </Link>
             )}
 
             <span className="max-w-44 truncate text-xs font-semibold text-brand-text-secondary">
-              {user?.email ?? 'No user'}
+              {user?.email ?? t('header.userFallback')}
             </span>
 
             <button
@@ -94,12 +94,37 @@ const Header: React.FC<HeaderProps> = ({ onLogoClick }) => {
               className="inline-flex items-center gap-1 rounded-full border border-brand-text-secondary/20 px-3 py-1 text-xs font-semibold text-brand-text-secondary transition-colors hover:text-brand-text"
             >
               <LogOut size={14} />
-              Logout
+              {t('header.logout')}
             </button>
 
             <span className="text-xs font-semibold uppercase tracking-widest text-brand-text-secondary">
-              Aapka Freelance Safar
+              {t('header.journey')}
             </span>
+          </div>
+
+          <div className="flex items-center gap-2 sm:hidden">
+            <select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              className="max-w-[118px] rounded-full border border-brand-text-secondary/20 bg-brand-primary/40 px-3 py-1 text-xs font-semibold text-brand-text outline-none"
+              aria-label={t('header.language')}
+            >
+              {languages.map((lang) => (
+                <option key={lang.code} value={lang.code}>
+                  {lang.label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => {
+                void signOutUser();
+              }}
+              className="inline-flex items-center justify-center rounded-full border border-brand-text-secondary/20 p-2 text-brand-text-secondary transition-colors hover:text-brand-text"
+              aria-label={t('header.logout')}
+            >
+              <LogOut size={14} />
+            </button>
           </div>
         </nav>
       </div>

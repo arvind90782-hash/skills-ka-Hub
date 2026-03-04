@@ -1,6 +1,7 @@
 
 import React from 'react';
 import useCopyToClipboard from '../hooks/useCopyToClipboard';
+import { useLocale } from '../hooks/useLocale';
 
 interface CopyButtonProps {
   textToCopy: string;
@@ -8,12 +9,13 @@ interface CopyButtonProps {
 
 const CopyButton: React.FC<CopyButtonProps> = ({ textToCopy }) => {
   const [isCopied, copy] = useCopyToClipboard();
+  const { t } = useLocale();
 
   return (
     <button
       onClick={() => copy(textToCopy)}
       className="absolute top-2 right-2 p-2 bg-brand-primary/50 hover:bg-brand-primary rounded-lg transition-all duration-200"
-      title="Clipboard par copy karein"
+      title={t('copy.title')}
     >
       {isCopied ? (
          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

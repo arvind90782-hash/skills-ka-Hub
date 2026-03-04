@@ -1,4 +1,3 @@
-
 import type { Skill, Tool } from './types';
 import { CodeIcon } from './components/icons/CodeIcon';
 import { DesignIcon } from './components/icons/DesignIcon';
@@ -11,7 +10,6 @@ import { MovieIcon } from './components/icons/MovieIcon';
 import { ChatIcon } from './components/icons/ChatIcon';
 import { ImageIcon } from './components/icons/ImageIcon';
 import { BoltIcon } from './components/icons/BoltIcon';
-
 
 export const SKILLS: Skill[] = [
   {
@@ -109,7 +107,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: 'video-analyzer',
-    name: 'Video Ka Jaसूस',
+    name: 'Video Ka Jasoos',
     description: 'Video upload karein aur uske andar ki jaankari nikalein.',
     icon: VideoIcon,
     color: 'from-purple-500 to-indigo-500',

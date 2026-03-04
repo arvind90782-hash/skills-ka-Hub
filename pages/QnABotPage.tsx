@@ -35,7 +35,7 @@ const QnABotPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
-    const { languageName } = useLocale();
+    const { languageName, t } = useLocale();
 
     useEffect(() => {
         try {
@@ -68,11 +68,11 @@ const QnABotPage: React.FC = () => {
             }
 
             setChat(chatSession);
-            setMessages([{ sender: 'bot', text: 'Namaste! Main hoon AI Dost, ab Google Search ki shakti ke saath. Aapka koi bhi sawal ho, yahan pooch sakte hain.' }]);
+            setMessages([{ sender: 'bot', text: t('tool.qna.welcome') }]);
         } catch (e: any) {
-            setError(getFriendlyAiErrorMessage(e, 'Chat shuru karne me issue aa gaya. API key/billing ek baar check karo.'));
+            setError(getFriendlyAiErrorMessage(e, t('tool.qna.startError')));
         }
-    }, [languageName]);
+    }, [languageName, t]);
 
     useEffect(() => {
         if (chatContainerRef.current) {
@@ -120,7 +120,7 @@ const QnABotPage: React.FC = () => {
             }
 
         } catch (e: any) {
-            const friendly = getFriendlyAiErrorMessage(e, 'Sorry, abhi AI response nahi de pa raha. Thodi der baad try karein.');
+            const friendly = getFriendlyAiErrorMessage(e, t('tool.qna.replyError'));
             const errorMessage: Message = { sender: 'bot', text: friendly };
             setMessages(prev => [...prev.slice(0, -1), errorMessage]);
         } finally {
@@ -134,7 +134,7 @@ const QnABotPage: React.FC = () => {
                 <div className="p-2 rounded-full ios-glass group-hover:bg-brand-accent group-hover:text-white transition-all">
                     <ArrowLeft size={18} />
                 </div>
-                <span className="font-semibold">Sabhi Tools</span>
+                <span className="font-semibold">{t('common.backTools')}</span>
             </Link>
 
             <div className="ios-card flex-grow flex flex-col overflow-hidden relative">
@@ -146,7 +146,7 @@ const QnABotPage: React.FC = () => {
                         </div>
                         <div>
                             <h1 className="text-2xl font-black text-brand-text tracking-tight flex items-center gap-2">
-                                AI Dost
+                                {t('tool.qna.title')}
                                 <motion.div
                                     animate={{ rotate: [0, 15, -15, 0] }}
                                     transition={{ repeat: Infinity, duration: 2 }}
@@ -155,7 +155,7 @@ const QnABotPage: React.FC = () => {
                                 </motion.div>
                             </h1>
                             <p className="text-sm text-brand-text-secondary font-medium flex items-center gap-1">
-                                <Search size={12} /> Google Search Powered Assistant
+                                <Search size={12} /> {t('tool.qna.subtitle')}
                             </p>
                         </div>
                     </div>
@@ -246,7 +246,7 @@ const QnABotPage: React.FC = () => {
                                 type="text"
                                 value={userInput}
                                 onChange={(e) => setUserInput(e.target.value)}
-                                placeholder="Apna sawal yahan type karein..."
+                                placeholder={t('tool.qna.input')}
                                 className="w-full bg-brand-primary/50 border-2 border-transparent focus:border-brand-accent/30 rounded-2xl py-4 pl-6 pr-14 text-brand-text placeholder:text-brand-text-secondary/50 outline-none transition-all duration-300 shadow-inner"
                                 disabled={isLoading || !chat}
                             />
@@ -265,7 +265,7 @@ const QnABotPage: React.FC = () => {
                         </motion.button>
                     </form>
                     <p className="text-[10px] text-center mt-4 text-brand-text-secondary font-bold uppercase tracking-[0.2em] opacity-50">
-                        AI Dost can make mistakes. Check important info.
+                        {t('tool.qna.disclaimer')}
                     </p>
                 </div>
             </div>

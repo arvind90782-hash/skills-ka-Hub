@@ -3,12 +3,14 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BarChart3, Check } from 'lucide-react';
 import type { PollBlock as PollBlockType } from '../types';
+import { useLocale } from '../hooks/useLocale';
 
 interface PollBlockProps {
   block: PollBlockType;
 }
 
 const PollBlock: React.FC<PollBlockProps> = ({ block }) => {
+  const { t } = useLocale();
   const [voted, setVoted] = useState(false);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   
@@ -38,7 +40,7 @@ const PollBlock: React.FC<PollBlockProps> = ({ block }) => {
         <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-500">
           <BarChart3 size={20} />
         </div>
-        <p className="text-xs font-black uppercase tracking-widest text-cyan-500">Aapki Kya Raay Hai?</p>
+        <p className="text-xs font-black uppercase tracking-widest text-cyan-500">{t('poll.title')}</p>
       </div>
 
       <h3 className="text-xl font-bold text-brand-text mb-8 leading-tight">{block.question}</h3>
@@ -102,7 +104,7 @@ const PollBlock: React.FC<PollBlockProps> = ({ block }) => {
           animate={{ opacity: 1 }}
           className="mt-6 text-center text-xs font-bold text-brand-text-secondary uppercase tracking-widest"
         >
-          Shukriya! Aapka vote count ho gaya hai.
+          {t('poll.thanks')}
         </motion.p>
       )}
     </div>

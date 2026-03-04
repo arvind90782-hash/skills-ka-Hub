@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RotateCw, Zap } from 'lucide-react';
 import type { FlashcardBlock as FlashcardBlockType } from '../types';
+import { useLocale } from '../hooks/useLocale';
 
 interface FlashcardBlockProps {
   block: FlashcardBlockType;
@@ -10,6 +11,7 @@ interface FlashcardBlockProps {
 
 const FlashcardBlock: React.FC<FlashcardBlockProps> = ({ block }) => {
   const [isFlipped, setIsFlipped] = useState(false);
+  const { t } = useLocale();
 
   return (
     <div className="my-10 perspective-1000">
@@ -17,7 +19,7 @@ const FlashcardBlock: React.FC<FlashcardBlockProps> = ({ block }) => {
         <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
           <Zap size={20} />
         </div>
-        <p className="text-xs font-black uppercase tracking-widest text-amber-500">Quick Flashcard</p>
+        <p className="text-xs font-black uppercase tracking-widest text-amber-500">{t('flash.title')}</p>
       </div>
 
       <motion.div
@@ -34,7 +36,7 @@ const FlashcardBlock: React.FC<FlashcardBlockProps> = ({ block }) => {
           </p>
           <div className="flex items-center gap-2 text-brand-accent font-bold text-sm uppercase tracking-widest">
             <RotateCw size={16} />
-              Tap to Flip
+            {t('flash.flip')}
           </div>
         </div>
 
@@ -48,7 +50,7 @@ const FlashcardBlock: React.FC<FlashcardBlockProps> = ({ block }) => {
           </p>
           <div className="flex items-center gap-2 text-emerald-500 font-bold text-sm uppercase tracking-widest">
             <RotateCw size={16} />
-              Tap to Flip Back
+            {t('flash.flipBack')}
           </div>
         </div>
       </motion.div>

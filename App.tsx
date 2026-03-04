@@ -19,6 +19,7 @@ import Loading from './components/Loading';
 import AuthGate from './components/AuthGate';
 import { TOOLS } from './constants';
 import { logUsageEvent } from './services/analyticsService';
+import { useLocale } from './hooks/useLocale';
 
 const TOOL_PATH_MAP = new Map(TOOLS.map((tool) => [tool.path, tool.id]));
 
@@ -79,7 +80,8 @@ const AnimatedRoutes: React.FC = () => {
 
 const AppLayout: React.FC = () => {
   const [showIntro, setShowIntro] = useState(false);
-  const watermarkText = 'Made by Editor Nishant';
+  const { t } = useLocale();
+  const watermarkText = t('footer.text');
 
   useEffect(() => {
     const video = document.createElement('video');
@@ -115,9 +117,10 @@ const AppLayout: React.FC = () => {
 
 const AppBody: React.FC = () => {
   const { loading, isAuthenticated } = useAuth();
+  const { t } = useLocale();
 
   if (loading) {
-    return <Loading message="Account check ho raha hai..." />;
+    return <Loading message={t('auth.wait')} />;
   }
 
   if (!isAuthenticated) {

@@ -3,12 +3,14 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, XCircle, HelpCircle } from 'lucide-react';
 import type { QuizBlock as QuizBlockType } from '../types';
+import { useLocale } from '../hooks/useLocale';
 
 interface QuizBlockProps {
   block: QuizBlockType;
 }
 
 const QuizBlock: React.FC<QuizBlockProps> = ({ block }) => {
+  const { t } = useLocale();
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
 
@@ -39,7 +41,7 @@ const QuizBlock: React.FC<QuizBlockProps> = ({ block }) => {
         <div className="p-2 rounded-xl bg-brand-accent/10 text-brand-accent">
           <HelpCircle size={20} />
         </div>
-        <p className="text-xs font-black uppercase tracking-widest text-brand-accent">Chalo, Dimaag Lagayein!</p>
+        <p className="text-xs font-black uppercase tracking-widest text-brand-accent">{t('quiz.title')}</p>
       </div>
 
       <h3 className="text-xl font-bold text-brand-text mb-8 leading-tight">{block.question}</h3>
@@ -92,7 +94,7 @@ const QuizBlock: React.FC<QuizBlockProps> = ({ block }) => {
               </div>
               <div className="space-y-1">
                 <p className={`text-lg font-black tracking-tight ${selectedOption === block.correctAnswerIndex ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                  {selectedOption === block.correctAnswerIndex ? 'Bilkul Sahi!' : 'Thoda Galat Ho Gaya'}
+                  {selectedOption === block.correctAnswerIndex ? t('quiz.correct') : t('quiz.wrong')}
                 </p>
                 <p className="text-brand-text-secondary leading-relaxed">{block.explanation}</p>
               </div>

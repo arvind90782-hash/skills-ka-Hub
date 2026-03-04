@@ -32,9 +32,11 @@ import DoAndDontBlock from '../components/DoAndDontBlock';
 import ShockingFactBlock from '../components/ShockingFactBlock';
 import IdeaCornerBlock from '../components/IdeaCornerBlock';
 import FlashcardBlock from '../components/FlashcardBlock';
+import { useLocale } from '../hooks/useLocale';
 
 const CategoryPage: React.FC = () => {
   const { categoryId } = useParams<{ categoryId: string }>();
+  const { t, localizeItem } = useLocale();
   const [content, setContent] = useState<GeneratedContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +44,10 @@ const CategoryPage: React.FC = () => {
   const [audioPlayer, setAudioPlayer] = useState<{ context: AudioContext; source: AudioBufferSourceNode } | null>(null);
   const [playingBlock, setPlayingBlock] = useState<string | null>(null);
 
-  const skill = useMemo(() => SKILLS.find((s) => s.id === categoryId), [categoryId]);
+  const skill = useMemo(() => {
+    const found = SKILLS.find((s) => s.id === categoryId);
+    return found ? localizeItem(found) : undefined;
+  }, [categoryId, localizeItem]);
 
   const stopAudio = useCallback(() => {
     if (audioPlayer) {
@@ -59,7 +64,7 @@ const CategoryPage: React.FC = () => {
 
   const fetchContent = useCallback(async () => {
     if (!skill) {
-      setError('Invalid skill category.');
+      setError(t('category.skillNotFound'));
       setLoading(false);
       return;
     }
@@ -72,13 +77,13 @@ const CategoryPage: React.FC = () => {
       setContent(generatedData);
       setCurrentPage(0);
     } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Course load karte waqt issue aa gaya.';
+      const message = e instanceof Error ? e.message : t('category.empty');
       setError(message);
       setContent(null);
     } finally {
       setLoading(false);
     }
-  }, [skill]);
+  }, [skill, t]);
 
   useEffect(() => {
     fetchContent();
@@ -161,17 +166,17 @@ const CategoryPage: React.FC = () => {
   if (!skill) {
     return (
       <div className="py-20 text-center">
-        <h2 className="mb-4 text-3xl font-bold tracking-tight text-red-500">Skill nahi mili!</h2>
+        <h2 className="mb-4 text-3xl font-bold tracking-tight text-red-500">{t('category.skillNotFound')}</h2>
         <Link to="/" className="ios-btn inline-flex items-center gap-2 bg-brand-accent text-white">
           <ArrowLeft size={20} />
-          Home par wapas jaayein
+          {t('category.backHome')}
         </Link>
       </div>
     );
   }
 
   if (loading) {
-    return <Loading message={`Aapka ${skill.name} course ban raha hai...`} />;
+    return <Loading message={t('category.generating', { skill: skill.name })} />;
   }
 
   if (error) {
@@ -179,7 +184,7 @@ const CategoryPage: React.FC = () => {
   }
 
   if (subPages.length === 0 || !currentSubPage) {
-    return <ErrorMessage message="Iss skill ke liye koi stable content nahi mila." onRetry={fetchContent} />;
+    return <ErrorMessage message={t('category.empty')} onRetry={fetchContent} />;
   }
 
   const progressPercentage = ((currentPage + 1) / subPages.length) * 100;
@@ -246,7 +251,7 @@ const CategoryPage: React.FC = () => {
             <div className="absolute right-0 top-0 -mr-16 -mt-16 h-32 w-32 rounded-full bg-amber-400/5 blur-2xl" />
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-2">
-                <p className="text-xs font-black uppercase tracking-widest text-amber-500">Expert Salah</p>
+                <p className="text-xs font-black uppercase tracking-widest text-amber-500">{t('category.expertTip')}</p>
                 <p className="text-lg leading-relaxed text-brand-text">{block.text}</p>
               </div>
               {renderAudioButton(block.text)}
@@ -258,7 +263,7 @@ const CategoryPage: React.FC = () => {
         contentNode = (
           <div className="ios-card my-8 border border-brand-accent/20 bg-brand-primary/30 p-6">
             <div className="mb-4 flex items-center justify-between">
-              <p className="text-xs font-black uppercase tracking-widest text-brand-accent">Template</p>
+              <p className="text-xs font-black uppercase tracking-widest text-brand-accent">{t('category.template')}</p>
               <CopyButton textToCopy={block.text} />
             </div>
             <pre className="whitespace-pre-wrap rounded-xl border border-brand-accent/10 bg-brand-primary/50 p-4 font-mono text-sm text-brand-text">
@@ -272,7 +277,7 @@ const CategoryPage: React.FC = () => {
           <div className="ios-card my-8 border-l-4 border-emerald-400 bg-emerald-500/5 p-6">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-2">
-                <p className="text-xs font-black uppercase tracking-widest text-emerald-500">Aapka Inaam</p>
+                <p className="text-xs font-black uppercase tracking-widest text-emerald-500">{t('category.reward')}</p>
                 <p className="text-lg leading-relaxed text-brand-text">{block.text}</p>
               </div>
               {renderAudioButton(block.text)}
@@ -285,7 +290,7 @@ const CategoryPage: React.FC = () => {
           <div className="ios-card my-8 border-l-4 border-rose-400 bg-rose-500/5 p-6">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-2">
-                <p className="text-xs font-black uppercase tracking-widest text-rose-500">Kya Aap Jaante Hain?</p>
+                <p className="text-xs font-black uppercase tracking-widest text-rose-500">{t('category.didYouKnow')}</p>
                 <p className="text-lg italic leading-relaxed text-brand-text">{block.text}</p>
               </div>
               {renderAudioButton(block.text)}
@@ -296,7 +301,7 @@ const CategoryPage: React.FC = () => {
       case 'infographic':
         contentNode = (
           <div className="ios-card my-8 border border-cyan-400/20 bg-cyan-500/5 p-6">
-            <p className="mb-2 text-xs font-black uppercase tracking-widest text-cyan-400">Infographic Note</p>
+            <p className="mb-2 text-xs font-black uppercase tracking-widest text-cyan-400">{t('category.infographic')}</p>
             <p className="text-lg leading-relaxed text-brand-text">{block.text}</p>
           </div>
         );
@@ -358,7 +363,7 @@ const CategoryPage: React.FC = () => {
         <div className="rounded-full p-2 ios-glass transition-all group-hover:bg-brand-accent group-hover:text-white">
           <ChevronLeft size={20} />
         </div>
-        <span className="font-semibold">Sabhi Skills</span>
+        <span className="font-semibold">{t('common.backSkills')}</span>
       </Link>
 
       <div className="ios-card overflow-hidden">
@@ -382,7 +387,7 @@ const CategoryPage: React.FC = () => {
             >
               <div className="mb-8 space-y-2">
                 <p className="text-xs font-black uppercase tracking-[0.2em] text-brand-accent">
-                  Page {currentPage + 1} of {subPages.length}
+                  {t('common.page')} {currentPage + 1} {t('common.of')} {subPages.length}
                 </p>
                 <h1 className="text-4xl font-black leading-none tracking-tighter text-brand-text md:text-6xl">
                   {currentSubPage.title}
@@ -405,7 +410,7 @@ const CategoryPage: React.FC = () => {
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                 <div className="absolute bottom-6 left-6 right-6">
                   <p className="rounded-2xl border border-white/10 bg-black/20 p-3 text-sm font-medium italic text-white/80 backdrop-blur-md">
-                    Story: {currentSubPage.motionStoryboard}
+                    {t('common.story')}: {currentSubPage.motionStoryboard}
                   </p>
                 </div>
               </motion.div>

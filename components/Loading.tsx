@@ -1,12 +1,14 @@
 
 import React from 'react';
+import { useLocale } from '../hooks/useLocale';
 
 const Loading: React.FC<{ message: string }> = ({ message }) => {
+    const { t } = useLocale();
     const messages = [
-        "Kuch creative ideas taiyaar ho rahe hain...",
-        "AI guru se salah li jaa rahi hai...",
-        "Aapka learning path ban raha hai...",
-        "Bas ek pal, kuch badhiya aane wala hai!",
+        t('loading.msg1'),
+        t('loading.msg2'),
+        t('loading.msg3'),
+        t('loading.msg4'),
     ];
 
     const [loadingMessage, setLoadingMessage] = React.useState(messages[0]);

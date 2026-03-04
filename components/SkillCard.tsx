@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import type { CardItem } from '../types';
+import { useLocale } from '../hooks/useLocale';
 
 interface CardProps {
   item: CardItem;
@@ -11,6 +12,7 @@ interface CardProps {
 
 const Card: React.FC<CardProps> = ({ item }) => {
   const Icon = item.icon;
+  const { t } = useLocale();
   
   return (
     <motion.div
@@ -61,7 +63,7 @@ const Card: React.FC<CardProps> = ({ item }) => {
               />
             </div>
             <span className="text-[10px] font-bold uppercase tracking-widest text-brand-accent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              Start Learning
+              {t('card.start')}
             </span>
           </div>
         </div>
