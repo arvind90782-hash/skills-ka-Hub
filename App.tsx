@@ -13,6 +13,7 @@ import ImageAnimatorPage from './pages/ImageAnimatorPage';
 import QnABotPage from './pages/QnABotPage';
 import ImageGeneratorPage from './pages/ImageGeneratorPage';
 import RocketWriterPage from './pages/RocketWriterPage';
+import UniversalDownloaderPage from './pages/UniversalDownloaderPage';
 import AdminPanelPage from './pages/AdminPanelPage';
 import CinematicIntro from './components/CinematicIntro';
 import Loading from './components/Loading';
@@ -71,6 +72,7 @@ const AnimatedRoutes: React.FC = () => {
           <Route path="/qna-bot" element={<QnABotPage />} />
           <Route path="/image-generator" element={<ImageGeneratorPage />} />
           <Route path="/rocket-writer" element={<RocketWriterPage />} />
+          <Route path="/media-downloader" element={<UniversalDownloaderPage />} />
           <Route path="/admin" element={<AdminPanelPage />} />
         </Routes>
       </motion.div>

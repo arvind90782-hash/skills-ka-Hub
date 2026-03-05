@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LogIn, UserPlus, ShieldCheck, Sparkles, KeyRound, Chrome } from 'lucide-react';
+import { LogIn, UserPlus, ShieldCheck, Sparkles, KeyRound, Chrome, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useLocale } from '../hooks/useLocale';
 
@@ -10,6 +10,8 @@ const AuthGate: React.FC = () => {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -36,9 +38,9 @@ const AuthGate: React.FC = () => {
     setLoading(true);
     try {
       if (mode === 'login') {
-        await signIn(email.trim(), password);
+        await signIn(email.trim(), password, rememberMe);
       } else {
-        await signUp(email.trim(), password);
+        await signUp(email.trim(), password, rememberMe);
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t('auth.errorFailed');
@@ -53,7 +55,7 @@ const AuthGate: React.FC = () => {
     setNotice(null);
     setLoading(true);
     try {
-      await signInWithGoogle();
+      await signInWithGoogle(rememberMe);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : t('auth.errorFailed');
       setError(message);
@@ -155,14 +157,24 @@ const AuthGate: React.FC = () => {
 
           <div>
             <label className="mb-2 block text-xs font-black uppercase tracking-widest text-brand-text-secondary">{t('auth.password')}</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-              placeholder={t('auth.passwordPlaceholder')}
-              className="w-full rounded-2xl border border-brand-text-secondary/20 bg-brand-primary/60 px-4 py-3 text-brand-text outline-none transition focus:border-brand-accent/40"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                placeholder={t('auth.passwordPlaceholder')}
+                className="w-full rounded-2xl border border-brand-text-secondary/20 bg-brand-primary/60 px-4 py-3 pr-12 text-brand-text outline-none transition focus:border-brand-accent/40"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-text-secondary transition-colors hover:text-brand-text"
+                aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
             {mode === 'login' && (
               <button
                 type="button"
@@ -176,6 +188,16 @@ const AuthGate: React.FC = () => {
               </button>
             )}
           </div>
+
+          <label className="flex items-center gap-2 text-sm text-brand-text-secondary">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 rounded border-brand-text-secondary/30 bg-brand-primary/60 text-brand-accent focus:ring-brand-accent"
+            />
+            {t('auth.rememberMe')}
+          </label>
 
           <button
             type="submit"

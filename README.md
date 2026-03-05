@@ -16,7 +16,7 @@ View your app in AI Studio: https://ai.studio/apps/56ed6d12-f38a-40cc-a3a4-1f483
 1. Install dependencies:
    `npm install`
 2. Create `.env` from `.env.example` and set:
-   - Gemini key: `GEMINI_API_KEY` (or `API_KEY` / `VITE_API_KEY`)
+   - Gemini key: `GEMINI_API_KEY` (or `API_KEY`)
    - Firebase keys: `VITE_FIREBASE_*` values
    - Admin emails: `VITE_ADMIN_EMAILS` (comma-separated)
 3. In Firebase console:

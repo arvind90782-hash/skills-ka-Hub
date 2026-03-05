@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { animateImage } from '../services/geminiService';
 import { fileToBase64 } from '../utils/fileToBase64';
@@ -16,26 +16,6 @@ const ImageAnimatorPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [apiKeySelected, setApiKeySelected] = useState(false);
-
-  const checkApiKey = useCallback(async () => {
-    if (window.aistudio && (await window.aistudio.hasSelectedApiKey())) {
-      setApiKeySelected(true);
-    } else {
-      setApiKeySelected(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void checkApiKey();
-  }, [checkApiKey]);
-
-  const handleSelectKey = async () => {
-    if (window.aistudio) {
-      await window.aistudio.openSelectKey();
-      setApiKeySelected(true);
-    }
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -63,42 +43,12 @@ const ImageAnimatorPage: React.FC = () => {
       const generatedVideoUrl = await animateImage(prompt, imageBase64, imageFile.type, aspectRatio, setLoadingMessage);
       setVideoUrl(generatedVideoUrl);
     } catch (e: any) {
-      let errorMessage = e?.message || t('error.title');
-      if (String(errorMessage).includes('Requested entity was not found')) {
-        errorMessage = t('tool.imageAnimator.errorKey');
-        setApiKeySelected(false);
-      }
-      setError(errorMessage);
+      setError(e?.message || t('error.title'));
     } finally {
       setLoading(false);
       setLoadingMessage('');
     }
   };
-
-  if (!apiKeySelected) {
-    return (
-      <div className="container mx-auto max-w-xl text-center animate-fadeIn">
-        <div className="rounded-2xl bg-brand-secondary p-6 shadow-lg md:p-8">
-          <h1 className="text-3xl font-extrabold text-brand-text">{t('tool.imageAnimator.apiTitle')}</h1>
-          <p className="mb-6 mt-4 text-brand-text-secondary">{t('tool.imageAnimator.apiDesc')}</p>
-          <button
-            onClick={handleSelectKey}
-            className="w-full rounded-lg bg-brand-accent px-6 py-3 font-semibold transition-colors hover:bg-brand-accent-light"
-          >
-            {t('tool.imageAnimator.selectKey')}
-          </button>
-          <a
-            href="https://ai.google.dev/gemini-api/docs/billing"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-4 inline-block text-sm text-brand-accent hover:underline"
-          >
-            {t('tool.imageAnimator.learnBilling')}
-          </a>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto max-w-3xl animate-fadeIn">

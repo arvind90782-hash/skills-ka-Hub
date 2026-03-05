@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { generateImage } from '../services/geminiService';
 import Loading from '../components/Loading';
@@ -14,26 +14,6 @@ const ImageGeneratorPage: React.FC = () => {
   const [result, setResult] = useState<{ imageUrl: string; altText: string } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [apiKeySelected, setApiKeySelected] = useState(false);
-
-  const checkApiKey = useCallback(async () => {
-    if (window.aistudio && (await window.aistudio.hasSelectedApiKey())) {
-      setApiKeySelected(true);
-    } else {
-      setApiKeySelected(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void checkApiKey();
-  }, [checkApiKey]);
-
-  const handleSelectKey = async () => {
-    if (window.aistudio) {
-      await window.aistudio.openSelectKey();
-      setApiKeySelected(true);
-    }
-  };
 
   const handleSubmit = async () => {
     if (!prompt.trim()) {
@@ -48,41 +28,11 @@ const ImageGeneratorPage: React.FC = () => {
       const generatedResult = await generateImage(prompt, imageSize);
       setResult(generatedResult);
     } catch (e: any) {
-      let errorMessage = e?.message || t('error.title');
-      if (String(errorMessage).includes('Requested entity was not found')) {
-        errorMessage = t('tool.imageGenerator.errorKey');
-        setApiKeySelected(false);
-      }
-      setError(errorMessage);
+      setError(e?.message || t('error.title'));
     } finally {
       setLoading(false);
     }
   };
-
-  if (!apiKeySelected) {
-    return (
-      <div className="container mx-auto max-w-xl text-center animate-fadeIn">
-        <div className="rounded-2xl bg-brand-secondary p-6 shadow-lg md:p-8">
-          <h1 className="text-3xl font-extrabold text-brand-text">{t('tool.imageGenerator.apiTitle')}</h1>
-          <p className="mb-6 mt-4 text-brand-text-secondary">{t('tool.imageGenerator.apiDesc')}</p>
-          <button
-            onClick={handleSelectKey}
-            className="w-full rounded-lg bg-brand-accent px-6 py-3 font-semibold transition-colors hover:bg-brand-accent-light"
-          >
-            {t('tool.imageGenerator.selectKey')}
-          </button>
-          <a
-            href="https://ai.google.dev/gemini-api/docs/billing"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-4 inline-block text-sm text-brand-accent hover:underline"
-          >
-            {t('tool.imageGenerator.learnBilling')}
-          </a>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="container mx-auto max-w-3xl animate-fadeIn">

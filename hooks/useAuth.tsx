@@ -1,9 +1,12 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import {
+  browserLocalPersistence,
+  browserSessionPersistence,
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   onAuthStateChanged,
   sendPasswordResetEmail,
+  setPersistence,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
@@ -19,9 +22,9 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAdmin: boolean;
   authReady: boolean;
-  signUp: (email: string, password: string) => Promise<void>;
-  signIn: (email: string, password: string) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
+  signUp: (email: string, password: string, remember?: boolean) => Promise<void>;
+  signIn: (email: string, password: string, remember?: boolean) => Promise<void>;
+  signInWithGoogle: (remember?: boolean) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   signOutUser: () => Promise<void>;
 }
@@ -68,6 +71,13 @@ const getAuthErrorMessage = (error: unknown, fallback: string): string => {
   }
 };
 
+const setAuthPersistenceMode = async (remember = true) => {
+  if (!firebaseAuth) {
+    return;
+  }
+  await setPersistence(firebaseAuth, remember ? browserLocalPersistence : browserSessionPersistence);
+};
+
 const upsertUserProfile = async (user: User, isSignup = false) => {
   if (!firestoreDb) {
     return;
@@ -111,12 +121,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => unsub();
   }, []);
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, remember = true) => {
     if (!firebaseAuth) {
       throw new Error('Firebase auth not configured');
     }
 
     try {
+      await setAuthPersistenceMode(remember);
       const cred = await createUserWithEmailAndPassword(firebaseAuth, email, password);
       await upsertUserProfile(cred.user, true);
       await logAuthEvent('signup', { targetEmail: email.toLowerCase(), method: 'password' });
@@ -125,12 +136,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = async (email: string, password: string, remember = true) => {
     if (!firebaseAuth) {
       throw new Error('Firebase auth not configured');
     }
 
     try {
+      await setAuthPersistenceMode(remember);
       const cred = await signInWithEmailAndPassword(firebaseAuth, email, password);
       await upsertUserProfile(cred.user, false);
       await logAuthEvent('login', { targetEmail: email.toLowerCase(), method: 'password' });
@@ -139,12 +151,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (remember = true) => {
     if (!firebaseAuth) {
       throw new Error('Firebase auth not configured');
     }
 
     try {
+      await setAuthPersistenceMode(remember);
       const cred = await signInWithPopup(firebaseAuth, googleProvider);
       const userEmail = cred.user.email?.toLowerCase() ?? '';
       const isSignup = cred.user.metadata.creationTime === cred.user.metadata.lastSignInTime;

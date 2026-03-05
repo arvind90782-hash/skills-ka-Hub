@@ -10,6 +10,7 @@ import { MovieIcon } from './components/icons/MovieIcon';
 import { ChatIcon } from './components/icons/ChatIcon';
 import { ImageIcon } from './components/icons/ImageIcon';
 import { BoltIcon } from './components/icons/BoltIcon';
+import { DownloadIcon } from './components/icons/DownloadIcon';
 
 export const SKILLS: Skill[] = [
   {
@@ -122,5 +123,14 @@ export const TOOLS: Tool[] = [
     color: 'from-green-500 to-teal-500',
     type: 'tool',
     path: '/image-animator',
+  },
+  {
+    id: 'media-downloader',
+    name: 'Media Downloader',
+    description: 'Direct media links se image/video/audio download karein.',
+    icon: DownloadIcon,
+    color: 'from-slate-500 to-zinc-600',
+    type: 'tool',
+    path: '/media-downloader',
   },
 ];

@@ -87,6 +87,9 @@ const translations: Record<SupportedUiLanguage, TranslationMap> = {
     'auth.google': 'Google se continue karo',
     'auth.resetNeedEmail': 'Reset link bhejne ke liye pehle email daalo.',
     'auth.resetSent': 'Password reset email bhej diya. Inbox check karo.',
+    'auth.rememberMe': 'Remember me',
+    'auth.showPassword': 'Password dikhao',
+    'auth.hidePassword': 'Password chupao',
 
     'error.title': 'Arre! Kuch gadbad ho gayi.',
 
@@ -251,6 +254,9 @@ const translations: Record<SupportedUiLanguage, TranslationMap> = {
     'auth.google': 'Continue with Google',
     'auth.resetNeedEmail': 'Enter your email first to get reset link.',
     'auth.resetSent': 'Password reset email sent. Check your inbox.',
+    'auth.rememberMe': 'Remember me',
+    'auth.showPassword': 'Show password',
+    'auth.hidePassword': 'Hide password',
 
     'error.title': 'Something went wrong.',
 
@@ -409,6 +415,9 @@ const translations: Record<SupportedUiLanguage, TranslationMap> = {
     'auth.errorFailed': 'ऑथेंटिकेशन फेल हो गया।',
     'auth.passwordPlaceholder': 'कम से कम 6 अक्षर',
     'auth.wait': 'कृपया प्रतीक्षा करें...',
+    'auth.rememberMe': 'मुझे याद रखें',
+    'auth.showPassword': 'पासवर्ड दिखाएं',
+    'auth.hidePassword': 'पासवर्ड छुपाएं',
 
     'error.title': 'कुछ गलत हो गया।',
 
@@ -582,6 +591,11 @@ const itemLocales: Record<string, Partial<Record<SupportedUiLanguage, { name: st
     hinglish: { name: 'Photo Ko Jivdan Do', description: 'Ek photo ko AI se video me badlo.' },
     en: { name: 'Animate Photo', description: 'Convert a single photo into a video with AI.' },
     hi: { name: 'फोटो को जीवंत बनाएं', description: 'एक फोटो को AI की मदद से वीडियो में बदलें।' },
+  },
+  'media-downloader': {
+    hinglish: { name: 'Media Downloader', description: 'Direct media links se image/video/audio download karo.' },
+    en: { name: 'Media Downloader', description: 'Download image/video/audio from direct media links.' },
+    hi: { name: 'मीडिया डाउनलोडर', description: 'डायरेक्ट मीडिया लिंक से इमेज/वीडियो/ऑडियो डाउनलोड करें।' },
   },
 };
 
