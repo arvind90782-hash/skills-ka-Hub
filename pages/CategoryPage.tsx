@@ -45,12 +45,86 @@ import ShockingFactBlock from '../components/ShockingFactBlock';
 import IdeaCornerBlock from '../components/IdeaCornerBlock';
 import FlashcardBlock from '../components/FlashcardBlock';
 import { useLocale } from '../hooks/useLocale';
+import { logUsageEvent } from '../services/analyticsService';
+
+type GiftResource = {
+  title: string;
+  description: string;
+  url: string;
+  tag: string;
+};
 
 const LESSON_VIDEOS = [
   'https://cdn.pixabay.com/video/2024/02/16/200854-913632171_large.mp4',
   'https://cdn.pixabay.com/video/2021/08/04/83854-584418641_large.mp4',
   'https://cdn.pixabay.com/video/2020/03/24/34015-399677271_large.mp4',
 ];
+
+const DEFAULT_GIFTS: GiftResource[] = [
+  {
+    title: 'Roadmap.sh',
+    description: 'Structured skill roadmaps jo learning ko fast and practical banate hain.',
+    url: 'https://roadmap.sh/',
+    tag: 'Learning Map',
+  },
+  {
+    title: 'Excalidraw',
+    description: 'Ideas aur workflows ko quickly visualize karne ka super clean whiteboard tool.',
+    url: 'https://excalidraw.com/',
+    tag: 'Visual Thinking',
+  },
+  {
+    title: 'Photopea',
+    description: 'Browser-based pro-level editor jo quick creative experiments ke liye perfect hai.',
+    url: 'https://www.photopea.com/',
+    tag: 'Creative Tool',
+  },
+  {
+    title: 'Regex101',
+    description: 'Text automation aur pattern understanding ke liye hidden gem.',
+    url: 'https://regex101.com/',
+    tag: 'Power Utility',
+  },
+];
+
+const SKILL_GIFT_MAP: Record<string, GiftResource> = {
+  'graphic-design': {
+    title: 'Coolors Palette Generator',
+    description: 'Professional color palette building ka fast tool jo design quality instantly improve karta hai.',
+    url: 'https://coolors.co/',
+    tag: 'Design Gift',
+  },
+  'video-editing': {
+    title: 'Shotdeck Style Frames',
+    description: 'Visual framing aur cinematic inspiration ke liye advanced reference library.',
+    url: 'https://shotdeck.com/',
+    tag: 'Video Gift',
+  },
+  'content-writing': {
+    title: 'Hemingway Editor',
+    description: 'Writing clarity boost karne ka tool jo text ko readable aur sharp banata hai.',
+    url: 'https://hemingwayapp.com/',
+    tag: 'Writing Gift',
+  },
+  programming: {
+    title: 'DevDocs',
+    description: 'Multiple docs ek jagah. Fast coding flow ke liye minimal docs engine.',
+    url: 'https://devdocs.io/',
+    tag: 'Code Gift',
+  },
+  'digital-marketing': {
+    title: 'AlsoAsked',
+    description: 'Real query tree se content strategy aur intent mapping improve hoti hai.',
+    url: 'https://alsoasked.com/',
+    tag: 'Marketing Gift',
+  },
+  animation: {
+    title: 'LottieFiles',
+    description: 'Micro-animations aur smooth UI motion assets ka trusted source.',
+    url: 'https://lottiefiles.com/',
+    tag: 'Animation Gift',
+  },
+};
 
 const makeTrustedSourceLinks = (skillName: string, pageTitle: string) => {
   const query = encodeURIComponent(`${skillName} ${pageTitle} tutorial guide`);
@@ -110,6 +184,11 @@ const CategoryPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const [audioPlayer, setAudioPlayer] = useState<{ context: AudioContext; source: AudioBufferSourceNode } | null>(null);
   const [playingBlock, setPlayingBlock] = useState<string | null>(null);
+  const [feedbackRating, setFeedbackRating] = useState<number>(0);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [activityChecks, setActivityChecks] = useState<boolean[]>([]);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
   const skill = useMemo(() => {
     const found = SKILLS.find((s) => s.id === categoryId);
@@ -173,6 +252,8 @@ const CategoryPage: React.FC = () => {
   }, [subPages.length]);
 
   const currentSubPage: SubPage | null = subPages[currentPage] ?? null;
+  const activityStorageKey = `course-activity-${skill?.id || 'unknown'}-${currentPage}`;
+  const feedbackStorageKey = `course-feedback-${skill?.id || 'unknown'}`;
 
   const handleNext = () => {
     if (subPages.length === 0) {
@@ -272,6 +353,79 @@ const CategoryPage: React.FC = () => {
     'Agar client ko ye topic samjhana ho, tum kaise explain karoge?',
   ];
 
+  const whyBlock =
+    currentSubPage.content.find((block) => block.type === 'benefits')?.type === 'benefits'
+      ? (currentSubPage.content.find((block) => block.type === 'benefits') as { type: 'benefits'; text: string }).text
+      : 'Ye topic aapko real client problems solve karna sikhaata hai, isliye iski demand high rehti hai.';
+  const howBlock =
+    currentSubPage.content.find((block) => block.type === 'template')?.type === 'template'
+      ? (currentSubPage.content.find((block) => block.type === 'template') as { type: 'template'; text: string }).text
+      : 'Step-by-step plan follow karke, har step ko practical output me convert karo.';
+  const riskPoints =
+    currentSubPage.content.find((block) => block.type === 'doAndDont')?.type === 'doAndDont'
+      ? (currentSubPage.content.find((block) => block.type === 'doAndDont') as DoAndDontBlockType).donts
+      : ['Without practice learning stick nahi hoti', 'Random direction se time waste hota hai', 'No review means slow growth'];
+
+  const deepDiveCards = [
+    {
+      title: 'Kyun Zaroori Hai?',
+      content: whyBlock,
+    },
+    {
+      title: 'Kaise Karein?',
+      content: howBlock.split('\n').join(' '),
+    },
+    {
+      title: 'Kya Fayda Hoga?',
+      content: 'Aap faster projects complete karoge, better portfolio banega, aur client confidence boost hoga.',
+    },
+    {
+      title: 'Kya Nuksan Ho Sakta Hai?',
+      content: riskPoints.join(', '),
+    },
+  ];
+
+  const quickActivities = [
+    `2-minute recap: ${currentSubPage.title} ka summary bolo.`,
+    '3 key terms pick karo aur har term ka 1 practical example do.',
+    '1 mini output banao jo aaj hi kisi ko dikhaya ja sake.',
+    'Self review: 1 strength + 1 improvement point likho.',
+  ];
+
+  const activityProgress =
+    activityChecks.length > 0
+      ? Math.round((activityChecks.filter(Boolean).length / activityChecks.length) * 100)
+      : 0;
+
+  const chartStats = [
+    { label: 'Concept Clarity', value: Math.min(98, 58 + currentPage * 6) },
+    { label: 'Practical Readiness', value: Math.min(97, 52 + currentPage * 7) },
+    { label: 'Client Confidence', value: Math.min(96, 47 + currentPage * 6) },
+    { label: 'Speed Learning', value: Math.min(95, 54 + currentPage * 5) },
+  ];
+
+  const faqItems = [
+    {
+      q: `${skill.name} seekhne ka fastest path kya hai?`,
+      a: 'Daily short practice + weekly mini project + real feedback cycle. Sirf content consume mat karo, output build karo.',
+    },
+    {
+      q: 'Agar topic difficult lage to kya karu?',
+      a: 'Topic ko micro-steps me tod do: observe, replicate, customize, publish. Har step ke baad quick revision karo.',
+    },
+    {
+      q: 'Client-ready hone me kitna time lag sakta hai?',
+      a: 'Consistency par depend karta hai, lekin focused routine ke saath 4-8 hafton me strong beginner level aa sakta hai.',
+    },
+    {
+      q: 'Is course ko YouTube se better kaise use karu?',
+      a: 'Yahan structured flow + activities + checkpoints + feedback loop use karo. Har page ko ek mini mission treat karo.',
+    },
+  ];
+
+  const giftResource = SKILL_GIFT_MAP[skill.id] || DEFAULT_GIFTS[currentPage % DEFAULT_GIFTS.length];
+  const giftUnlocked = currentPage === subPages.length - 1;
+
   const stepFlow = [
     `Step 1: ${currentSubPage.title} ka objective clear karo aur expected output likho.`,
     `Step 2: Video section dekhkar kam se kam 3 practical notes likho.`,
@@ -310,6 +464,79 @@ const CategoryPage: React.FC = () => {
       correctAnswerIndex: 0,
       explanation: 'Clear objective se speed, accuracy aur confidence teeno improve hote hain.',
     } as QuizBlockType);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(activityStorageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length === quickActivities.length) {
+          setActivityChecks(parsed.map(Boolean));
+          return;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    setActivityChecks(new Array(quickActivities.length).fill(false));
+  }, [activityStorageKey, currentPage]);
+
+  useEffect(() => {
+    if (activityChecks.length === 0) {
+      return;
+    }
+    try {
+      localStorage.setItem(activityStorageKey, JSON.stringify(activityChecks));
+    } catch {
+      // ignore
+    }
+  }, [activityChecks, activityStorageKey]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(feedbackStorageKey);
+      if (!raw) {
+        return;
+      }
+      const parsed = JSON.parse(raw);
+      if (typeof parsed?.rating === 'number') {
+        setFeedbackRating(parsed.rating);
+      }
+      if (typeof parsed?.text === 'string') {
+        setFeedbackText(parsed.text);
+      }
+      if (typeof parsed?.submitted === 'boolean') {
+        setFeedbackSubmitted(parsed.submitted);
+      }
+    } catch {
+      // ignore
+    }
+  }, [feedbackStorageKey, skill.id]);
+
+  const toggleActivity = (idx: number) => {
+    setActivityChecks((prev) => prev.map((item, index) => (index === idx ? !item : item)));
+  };
+
+  const handleFeedbackSubmit = () => {
+    try {
+      localStorage.setItem(
+        feedbackStorageKey,
+        JSON.stringify({
+          rating: feedbackRating,
+          text: feedbackText,
+          submitted: true,
+        })
+      );
+    } catch {
+      // ignore
+    }
+    setFeedbackSubmitted(true);
+    void logUsageEvent('tool_action', {
+      toolId: `course-feedback-${skill.id}`,
+      action: 'submit_feedback',
+      rating: feedbackRating,
+    });
+  };
 
   const renderContentBlock = (block: ContentBlock, index: number) => {
     const blockId = `${currentPage}-${index}`;
@@ -639,6 +866,170 @@ const CategoryPage: React.FC = () => {
                       </a>
                     ))}
                   </div>
+                </div>
+              </div>
+
+              <div className="mb-10 grid gap-6 lg:grid-cols-2">
+                <div className="ios-card border border-brand-accent/20 p-5">
+                  <p className="mb-3 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-accent">
+                    <Sparkles size={14} />
+                    Learning Performance Chart
+                  </p>
+                  <div className="space-y-3">
+                    {chartStats.map((item) => (
+                      <div key={`${currentPage}-${item.label}`}>
+                        <div className="mb-1 flex items-center justify-between">
+                          <span className="text-xs font-semibold text-brand-text-secondary">{item.label}</span>
+                          <span className="text-xs font-black text-brand-accent">{item.value}%</span>
+                        </div>
+                        <div className="h-2 overflow-hidden rounded-full bg-brand-primary/60">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${item.value}%` }}
+                            transition={{ duration: 0.6, ease: 'easeOut' }}
+                            className="h-full rounded-full bg-gradient-to-r from-brand-accent to-cyan-400"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="ios-card border border-brand-accent/20 p-5">
+                  <p className="mb-3 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-accent">
+                    <ListChecks size={14} />
+                    Activity Board
+                  </p>
+                  <p className="mb-3 text-sm text-brand-text-secondary">
+                    In activities ko tick karo. Progress badhegi to retention bhi improve hoga.
+                  </p>
+                  <div className="mb-3 h-2 overflow-hidden rounded-full bg-brand-primary/60">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${activityProgress}%` }}
+                      className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-brand-accent"
+                    />
+                  </div>
+                  <p className="mb-4 text-xs font-black uppercase tracking-widest text-brand-accent">
+                    Progress: {activityProgress}%
+                  </p>
+                  <div className="space-y-2">
+                    {quickActivities.map((activity, idx) => (
+                      <label
+                        key={`${currentPage}-activity-${idx}`}
+                        className="flex items-start gap-3 rounded-xl border border-brand-text-secondary/10 bg-brand-primary/40 p-3"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={Boolean(activityChecks[idx])}
+                          onChange={() => toggleActivity(idx)}
+                          className="mt-1"
+                        />
+                        <span className="text-sm text-brand-text">{activity}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-10 grid gap-6 lg:grid-cols-2">
+                <div className="ios-card border border-brand-accent/20 p-5">
+                  <p className="mb-3 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-accent">
+                    <Sparkles size={14} />
+                    End Reward
+                  </p>
+                  {!giftUnlocked ? (
+                    <div className="rounded-xl border border-brand-text-secondary/10 bg-brand-primary/40 p-4">
+                      <p className="text-sm font-semibold text-brand-text">
+                        Gift unlock karne ke liye last page tak complete karo.
+                      </p>
+                      <p className="mt-2 text-sm text-brand-text-secondary">
+                        Last page pe ek hidden useful resource/tool milega jo daily workflow ko upgrade karega.
+                      </p>
+                    </div>
+                  ) : (
+                    <a
+                      href={giftResource.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-4 transition hover:border-emerald-400/60"
+                    >
+                      <p className="text-xs font-black uppercase tracking-widest text-emerald-400">{giftResource.tag}</p>
+                      <h3 className="mt-1 text-lg font-black text-brand-text">{giftResource.title}</h3>
+                      <p className="mt-2 text-sm text-brand-text-secondary">{giftResource.description}</p>
+                      <p className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-emerald-400">
+                        Open Resource <ExternalLink size={14} />
+                      </p>
+                    </a>
+                  )}
+                </div>
+
+                <div className="ios-card border border-brand-accent/20 p-5">
+                  <p className="mb-3 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-accent">
+                    <Sparkles size={14} />
+                    Feedback
+                  </p>
+                  <p className="mb-3 text-sm text-brand-text-secondary">
+                    Course quality improve karne ke liye quick feedback do.
+                  </p>
+                  <div className="mb-3 flex gap-2">
+                    {[1, 2, 3, 4, 5].map((rate) => (
+                      <button
+                        key={`${currentPage}-rate-${rate}`}
+                        onClick={() => setFeedbackRating(rate)}
+                        className={`rounded-lg px-3 py-2 text-sm font-bold ${
+                          feedbackRating === rate ? 'bg-brand-accent text-white' : 'bg-brand-primary/50 text-brand-text'
+                        }`}
+                      >
+                        {rate}
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    value={feedbackText}
+                    onChange={(e) => setFeedbackText(e.target.value)}
+                    rows={4}
+                    placeholder="Aapko kya best laga, aur kya improve hona chahiye?"
+                    className="w-full rounded-xl border border-brand-text-secondary/20 bg-brand-primary/50 px-4 py-3 text-brand-text outline-none"
+                  />
+                  <button
+                    onClick={handleFeedbackSubmit}
+                    className="mt-3 rounded-xl bg-brand-accent px-4 py-2 text-sm font-bold text-white"
+                  >
+                    {feedbackSubmitted ? 'Feedback Saved' : 'Submit Feedback'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="mb-10 ios-card border border-brand-accent/20 p-5">
+                <p className="mb-3 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-accent">
+                  <ListChecks size={14} />
+                  FAQ
+                </p>
+                <div className="space-y-2">
+                  {faqItems.map((item, idx) => (
+                    <div key={`${currentPage}-faq-${idx}`} className="rounded-xl border border-brand-text-secondary/10 bg-brand-primary/40">
+                      <button
+                        onClick={() => setOpenFaqIndex((prev) => (prev === idx ? null : idx))}
+                        className="flex w-full items-center justify-between px-4 py-3 text-left"
+                      >
+                        <span className="text-sm font-bold text-brand-text">{item.q}</span>
+                        <span className="text-brand-accent">{openFaqIndex === idx ? '−' : '+'}</span>
+                      </button>
+                      <AnimatePresence>
+                        {openFaqIndex === idx && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden px-4 pb-4"
+                          >
+                            <p className="text-sm text-brand-text-secondary">{item.a}</p>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  ))}
                 </div>
               </div>
 
