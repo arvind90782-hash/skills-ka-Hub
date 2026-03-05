@@ -254,6 +254,61 @@ const CategoryPage: React.FC = () => {
   const currentSubPage: SubPage | null = subPages[currentPage] ?? null;
   const activityStorageKey = `course-activity-${skill?.id || 'unknown'}-${currentPage}`;
   const feedbackStorageKey = `course-feedback-${skill?.id || 'unknown'}`;
+  const currentTitle = currentSubPage?.title ?? 'Learning Section';
+  const quickActivitiesSeed = [
+    `2-minute recap: ${currentTitle} ka summary bolo.`,
+    '3 key terms pick karo aur har term ka 1 practical example do.',
+    '1 mini output banao jo aaj hi kisi ko dikhaya ja sake.',
+    'Self review: 1 strength + 1 improvement point likho.',
+  ];
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(activityStorageKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length === quickActivitiesSeed.length) {
+          setActivityChecks(parsed.map(Boolean));
+          return;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    setActivityChecks(new Array(quickActivitiesSeed.length).fill(false));
+  }, [activityStorageKey, quickActivitiesSeed.length]);
+
+  useEffect(() => {
+    if (activityChecks.length === 0) {
+      return;
+    }
+    try {
+      localStorage.setItem(activityStorageKey, JSON.stringify(activityChecks));
+    } catch {
+      // ignore
+    }
+  }, [activityChecks, activityStorageKey]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(feedbackStorageKey);
+      if (!raw) {
+        return;
+      }
+      const parsed = JSON.parse(raw);
+      if (typeof parsed?.rating === 'number') {
+        setFeedbackRating(parsed.rating);
+      }
+      if (typeof parsed?.text === 'string') {
+        setFeedbackText(parsed.text);
+      }
+      if (typeof parsed?.submitted === 'boolean') {
+        setFeedbackSubmitted(parsed.submitted);
+      }
+    } catch {
+      // ignore
+    }
+  }, [feedbackStorageKey]);
 
   const handleNext = () => {
     if (subPages.length === 0) {
@@ -385,12 +440,7 @@ const CategoryPage: React.FC = () => {
     },
   ];
 
-  const quickActivities = [
-    `2-minute recap: ${currentSubPage.title} ka summary bolo.`,
-    '3 key terms pick karo aur har term ka 1 practical example do.',
-    '1 mini output banao jo aaj hi kisi ko dikhaya ja sake.',
-    'Self review: 1 strength + 1 improvement point likho.',
-  ];
+  const quickActivities = quickActivitiesSeed;
 
   const activityProgress =
     activityChecks.length > 0
@@ -464,54 +514,6 @@ const CategoryPage: React.FC = () => {
       correctAnswerIndex: 0,
       explanation: 'Clear objective se speed, accuracy aur confidence teeno improve hote hain.',
     } as QuizBlockType);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(activityStorageKey);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length === quickActivities.length) {
-          setActivityChecks(parsed.map(Boolean));
-          return;
-        }
-      }
-    } catch {
-      // ignore
-    }
-    setActivityChecks(new Array(quickActivities.length).fill(false));
-  }, [activityStorageKey, currentPage]);
-
-  useEffect(() => {
-    if (activityChecks.length === 0) {
-      return;
-    }
-    try {
-      localStorage.setItem(activityStorageKey, JSON.stringify(activityChecks));
-    } catch {
-      // ignore
-    }
-  }, [activityChecks, activityStorageKey]);
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(feedbackStorageKey);
-      if (!raw) {
-        return;
-      }
-      const parsed = JSON.parse(raw);
-      if (typeof parsed?.rating === 'number') {
-        setFeedbackRating(parsed.rating);
-      }
-      if (typeof parsed?.text === 'string') {
-        setFeedbackText(parsed.text);
-      }
-      if (typeof parsed?.submitted === 'boolean') {
-        setFeedbackSubmitted(parsed.submitted);
-      }
-    } catch {
-      // ignore
-    }
-  }, [feedbackStorageKey, skill.id]);
 
   const toggleActivity = (idx: number) => {
     setActivityChecks((prev) => prev.map((item, index) => (index === idx ? !item : item)));
