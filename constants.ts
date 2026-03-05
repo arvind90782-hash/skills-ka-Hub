@@ -81,6 +81,33 @@ export const TOOLS: Tool[] = [
     path: '/secret-creator-lab',
   },
   {
+    id: 'ultra-tools',
+    name: 'Ultra Tools',
+    description: 'AI-powered tools for creators - viral scripts, thumbnails, ideas & more!',
+    icon: BoltIcon,
+    color: 'from-purple-500 to-pink-500',
+    type: 'tool',
+    path: '/ultra-tools',
+  },
+  {
+    id: 'creator-profile',
+    name: 'Creator Profile',
+    description: 'Meet the creator behind this website',
+    icon: BoltIcon,
+    color: 'from-amber-500 to-orange-500',
+    type: 'tool',
+    path: '/creator-profile',
+  },
+  {
+    id: 'user-profile',
+    name: 'My Profile',
+    description: 'Your personal learning dashboard',
+    icon: BoltIcon,
+    color: 'from-cyan-500 to-blue-500',
+    type: 'tool',
+    path: '/user-profile',
+  },
+  {
     id: 'qna-bot',
     name: 'AI Dost',
     description: 'Google Search se jude, up-to-date jawabat paayein.',
@@ -281,12 +308,27 @@ export const TOOLS: Tool[] = [
 ];
 
 export const MAKER_PROFILE = {
-  name: 'Editor Nishant',
-  role: 'Video Editor + Developer',
-  bio: 'Main is website ka maker hoon. Mera focus creative learning experiences, smooth UI animations, aur practical skill growth systems banana hai.',
+  name: 'Nishant Singh',
+  role: 'Video Editor + Website Developer + Creative Designer',
+  bio: 'Main ek creative student aur digital creator hoon jise technology aur creativity ka combination bohot pasand hai. Mujhe video editing ka bohot shauk hai aur maine khud editing tools explore karke kaafi creative cheezein seekhi hain.',
+  story: 'Maine ye website isliye banayi hai taaki log boring courses ki jagah fun aur interactive tarike se skills seekh sake. Goal hai logon ko fast aur smart tarike se digital skills sikhana.',
   email: 'arvind90782@gmail.com',
   website: 'https://skillskahub.vercel.app',
   instagram: 'https://instagram.com/editor.nishant',
+  imageUrl: 'https://drive.google.com/uc?export=download&id=1e_jpmmyBMp9GT7aKE3_mFVQ5amBxhCZ-',
+  skills: [
+    'Video Editing',
+    'Thumbnail Designing',
+    'Graphic Design',
+    'Website Development',
+    'AI Tools Building',
+    'Content Creation'
+  ],
+  services: [
+    { title: 'Video Editor', description: 'Professional video editing for YouTube, Instagram, and more' },
+    { title: 'Website Developer', description: 'Modern, fast, and beautiful websites' },
+    { title: 'Creative Designer', description: 'Thumbnails, graphics, and visual content' }
+  ]
 };
 
 export const WEBSITE_FAQ = [

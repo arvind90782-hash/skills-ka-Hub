@@ -1,11 +1,12 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Sun, Moon, Sparkles, LogOut, ShieldCheck } from 'lucide-react';
+import { Sun, Moon, Sparkles, LogOut, ShieldCheck, User, Brain, Crown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../hooks/useTheme';
 import { useAuth } from '../hooks/useAuth';
 import { useLocale } from '../hooks/useLocale';
+import { isSecretCreatorLabUnlocked } from '../services/courseProgressService';
 
 interface HeaderProps {
   onLogoClick?: () => void;
@@ -59,6 +60,37 @@ const Header: React.FC<HeaderProps> = ({ onLogoClick }) => {
           </div>
 
           <div className="hidden sm:flex items-center gap-3">
+            {/* Ultra Tools Link */}
+            <Link
+              to="/ultra-tools"
+              className="inline-flex items-center gap-1 rounded-full bg-purple-500/10 px-3 py-1 text-xs font-bold text-purple-400 hover:bg-purple-500/20 transition-colors"
+            >
+              <Brain size={14} />
+              Ultra Tools
+            </Link>
+
+            {/* Secret Creator Lab Link */}
+            <Link
+              to="/secret-creator-lab"
+              className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-bold transition-colors ${
+                isSecretCreatorLabUnlocked() 
+                  ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' 
+                  : 'bg-brand-primary/50 text-brand-text-secondary'
+              }`}
+            >
+              <Crown size={14} />
+              Rewards
+            </Link>
+
+            {/* Creator Profile Link */}
+            <Link
+              to="/creator-profile"
+              className="inline-flex items-center gap-1 rounded-full bg-brand-accent/10 px-3 py-1 text-xs font-bold text-brand-accent hover:bg-brand-accent/20 transition-colors"
+            >
+              <Sparkles size={14} />
+              Creator
+            </Link>
+
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
@@ -103,10 +135,41 @@ const Header: React.FC<HeaderProps> = ({ onLogoClick }) => {
           </div>
 
           <div className="flex items-center gap-2 sm:hidden">
+            {/* Mobile: Ultra Tools */}
+            <Link
+              to="/ultra-tools"
+              className="inline-flex items-center justify-center rounded-full bg-purple-500/10 p-2 text-purple-400"
+              aria-label="Ultra Tools"
+            >
+              <Brain size={18} />
+            </Link>
+            
+            {/* Mobile: Rewards */}
+            <Link
+              to="/secret-creator-lab"
+              className={`inline-flex items-center justify-center rounded-full p-2 ${
+                isSecretCreatorLabUnlocked() 
+                  ? 'bg-emerald-500/10 text-emerald-400' 
+                  : 'bg-brand-primary/50 text-brand-text-secondary'
+              }`}
+              aria-label="Rewards"
+            >
+              <Crown size={18} />
+            </Link>
+            
+            {/* Mobile: Creator Profile */}
+            <Link
+              to="/creator-profile"
+              className="inline-flex items-center justify-center rounded-full bg-brand-accent/10 p-2 text-brand-accent"
+              aria-label="Creator"
+            >
+              <Sparkles size={18} />
+            </Link>
+            
             <select
               value={language}
               onChange={(e) => setLanguage(e.target.value)}
-              className="max-w-[118px] rounded-full border border-brand-text-secondary/20 bg-brand-primary/40 px-3 py-1 text-xs font-semibold text-brand-text outline-none"
+              className="max-w-[80px] rounded-full border border-brand-text-secondary/20 bg-brand-primary/40 px-2 py-1 text-xs font-semibold text-brand-text outline-none"
               aria-label={t('header.language')}
             >
               {languages.map((lang) => (
