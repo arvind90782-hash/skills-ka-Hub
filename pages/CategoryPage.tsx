@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ArrowLeft, Play, Pause, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowLeft, Play, Pause, Loader2, Clapperboard, Lightbulb, ListChecks } from 'lucide-react';
 import { SKILLS } from '../constants';
 import type {
   GeneratedContent,
@@ -33,6 +33,35 @@ import ShockingFactBlock from '../components/ShockingFactBlock';
 import IdeaCornerBlock from '../components/IdeaCornerBlock';
 import FlashcardBlock from '../components/FlashcardBlock';
 import { useLocale } from '../hooks/useLocale';
+
+const LESSON_VIDEOS = [
+  'https://cdn.pixabay.com/video/2024/02/16/200854-913632171_large.mp4',
+  'https://cdn.pixabay.com/video/2021/08/04/83854-584418641_large.mp4',
+  'https://cdn.pixabay.com/video/2020/03/24/34015-399677271_large.mp4',
+];
+
+const textFromBlock = (block: ContentBlock): string => {
+  switch (block.type) {
+    case 'heading':
+    case 'paragraph':
+    case 'tip':
+    case 'template':
+    case 'benefits':
+    case 'infographic':
+    case 'funFact':
+      return block.text;
+    case 'qAndA':
+      return `${block.question} ${block.answer}`;
+    case 'mythBuster':
+      return `${block.myth} ${block.reality}`;
+    case 'shockingFact':
+      return block.fact;
+    case 'ideaCorner':
+      return block.prompt;
+    default:
+      return '';
+  }
+};
 
 const CategoryPage: React.FC = () => {
   const { categoryId } = useParams<{ categoryId: string }>();
@@ -188,6 +217,22 @@ const CategoryPage: React.FC = () => {
   }
 
   const progressPercentage = ((currentPage + 1) / subPages.length) * 100;
+  const lessonVideoUrl = LESSON_VIDEOS[currentPage % LESSON_VIDEOS.length];
+  const visualHighlights = currentSubPage.content
+    .map((block) => textFromBlock(block))
+    .filter((text) => text.trim().length > 0)
+    .slice(0, 3)
+    .map((text) => (text.length > 120 ? `${text.slice(0, 117)}...` : text));
+
+  while (visualHighlights.length < 3) {
+    visualHighlights.push('Is section me step-by-step practice points milenge. Focus mode me padho aur apply karo.');
+  }
+
+  const practiceQuestions = [
+    `${currentSubPage.title} ka main goal 1 line me explain karo.`,
+    'Is page ka sabse practical step kaunsa hai jo tum aaj apply kar sakte ho?',
+    'Agar client ko ye topic samjhana ho, tum kaise explain karoge?',
+  ];
 
   const renderContentBlock = (block: ContentBlock, index: number) => {
     const blockId = `${currentPage}-${index}`;
@@ -394,6 +439,18 @@ const CategoryPage: React.FC = () => {
                 </h1>
               </div>
 
+              <div className="mb-10 grid gap-4 md:grid-cols-3">
+                {visualHighlights.map((highlight, idx) => (
+                  <div key={`${currentPage}-highlight-${idx}`} className="ios-card border border-brand-accent/10 p-4">
+                    <p className="mb-2 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-accent">
+                      <Lightbulb size={14} />
+                      Visual Point {idx + 1}
+                    </p>
+                    <p className="text-sm leading-relaxed text-brand-text-secondary">{highlight}</p>
+                  </div>
+                ))}
+              </div>
+
               <motion.div
                 className="relative mb-12 overflow-hidden rounded-[var(--radius-ios-lg)] shadow-2xl"
                 whileHover={{ scale: 1.02 }}
@@ -414,6 +471,41 @@ const CategoryPage: React.FC = () => {
                   </p>
                 </div>
               </motion.div>
+
+              <div className="mb-10 grid gap-6 lg:grid-cols-2">
+                <div className="ios-card overflow-hidden border border-brand-accent/20 p-4">
+                  <p className="mb-3 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-accent">
+                    <Clapperboard size={14} />
+                    Visual Lesson Video
+                  </p>
+                  <video
+                    key={`${currentPage}-video`}
+                    controls
+                    preload="metadata"
+                    poster={`https://picsum.photos/seed/${encodeURIComponent(currentSubPage.title)}/1200/600`}
+                    className="aspect-video w-full rounded-xl border border-brand-text-secondary/10 bg-black/40"
+                  >
+                    <source src={lessonVideoUrl} type="video/mp4" />
+                  </video>
+                  <p className="mt-3 text-sm text-brand-text-secondary">
+                    Video dekhne ke baad neeche ke questions ka answer khud se likho. Isse retention aur speed dono improve hoti hai.
+                  </p>
+                </div>
+
+                <div className="ios-card border border-brand-accent/20 p-4">
+                  <p className="mb-3 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-accent">
+                    <ListChecks size={14} />
+                    Speed Check Questions
+                  </p>
+                  <div className="space-y-3">
+                    {practiceQuestions.map((question, idx) => (
+                      <div key={`${currentPage}-question-${idx}`} className="rounded-xl bg-brand-primary/40 p-3">
+                        <p className="text-sm font-semibold text-brand-text">Q{idx + 1}. {question}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
 
               <div className="space-y-4">{currentSubPage.content.map(renderContentBlock)}</div>
             </motion.div>

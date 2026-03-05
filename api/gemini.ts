@@ -5,10 +5,10 @@ type ReqBody = {
   payload?: Record<string, any>;
 };
 
-const COURSE_MODELS = ['gemini-2.5-flash', 'gemini-1.5-flash'] as const;
+const COURSE_MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-1.5-flash'] as const;
 const ANALYSIS_MODELS = ['gemini-2.5-flash', 'gemini-1.5-flash'] as const;
 const IMAGE_MODELS = ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image-preview', 'gemini-2.5-flash'] as const;
-const FAST_TEXT_MODELS = ['gemini-2.5-flash', 'gemini-1.5-flash'] as const;
+const FAST_TEXT_MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-1.5-flash'] as const;
 const CHAT_MODELS = ['gemini-2.5-flash', 'gemini-1.5-flash'] as const;
 
 const errorToString = (error: unknown): string => {
@@ -105,9 +105,10 @@ export default async function handler(req: any, res: any) {
       const preferredLanguage = String(payload.preferredLanguage || 'English');
 
       const prompt = `
-Create a highly engaging learning module for "${skillName}".
-Audience: beginners learning freelancing.
-Return STRICT JSON with this shape:
+Create a practical learning module for "${skillName}" for beginners.
+Preferred language: ${preferredLanguage}.
+
+Return STRICT JSON:
 {
   "skillName": string,
   "subPages": [
@@ -119,8 +120,11 @@ Return STRICT JSON with this shape:
     }
   ]
 }
-Generate 8-10 subPages. Keep output language preference: ${preferredLanguage}.
-Use mixed block types: heading, paragraph, tip, template, benefits, infographic, funFact, quiz, aiChallenge, poll, qAndA, expertSays, mythBuster, doAndDont, shockingFact, ideaCorner, flashcard.
+
+Generate exactly 6 subPages for faster loading.
+Keep each block concise (2-4 lines max).
+Use mixed block types across the module: heading, paragraph, tip, template, benefits, infographic, funFact, quiz, qAndA, doAndDont.
+Avoid extra text outside JSON.
 `;
 
       const response = await runWithModelFallback(COURSE_MODELS, (model) =>
@@ -213,6 +217,10 @@ Use mixed block types: heading, paragraph, tip, template, benefits, infographic,
         ai.models.generateContent({
           model,
           contents: prompt,
+          config: {
+            temperature: 0.5,
+            maxOutputTokens: 260,
+          },
         })
       );
       json(res, 200, { ok: true, data: { text: response.text || '' } });

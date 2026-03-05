@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
-import { Copy, Download, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { Copy, Download, MessageSquare, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { generateFastText } from '../services/geminiService';
 import ErrorMessage from '../components/ErrorMessage';
 import { useLocale } from '../hooks/useLocale';
@@ -36,6 +36,19 @@ interface SprintTask {
   text: string;
   done: boolean;
 }
+
+const AI_TOOL_IDS: ToolId[] = [
+  'resume-cover-letter',
+  'proposal-writer',
+  'portfolio-builder',
+  'thumbnail-hook-generator',
+  'seo-blog-toolkit',
+  'social-calendar',
+  'meeting-action-items',
+  'email-assistant',
+  'code-bug-finder',
+  'interview-prep-bot',
+];
 
 const TOOL_META: Record<ToolId, ToolMeta> = {
   'resume-cover-letter': {
@@ -235,6 +248,32 @@ const inr = (value: number) =>
     Number.isFinite(value) ? value : 0
   );
 
+const compactPlainText = (text: string, maxWords = 90): string => {
+  const withoutCodeFences = text.replace(/```[\s\S]*?```/g, ' ');
+  const withoutInlineCode = withoutCodeFences.replace(/`[^`]+`/g, ' ');
+  const withoutMarkdown = withoutInlineCode
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/^\s*[-*]\s+/gm, '')
+    .replace(/^\s*\d+[\).]\s+/gm, '')
+    .replace(/\*\*/g, '')
+    .replace(/__/g, '');
+
+  const cleaned = withoutMarkdown
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((line) => !/^(here is|output|json|explanation|option \d+|variation \d+|note:)/i.test(line))
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const words = cleaned.split(' ').filter(Boolean);
+  if (words.length <= maxWords) {
+    return cleaned;
+  }
+  return `${words.slice(0, maxWords).join(' ')}...`;
+};
+
 const ProToolsPage: React.FC = () => {
   const { toolId } = useParams<{ toolId: ToolId }>();
   const { t } = useLocale();
@@ -250,6 +289,9 @@ const ProToolsPage: React.FC = () => {
   const [result, setResult] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editorPrompt, setEditorPrompt] = useState('');
+  const [editorLoading, setEditorLoading] = useState(false);
+  const [editorHistory, setEditorHistory] = useState<string[]>([]);
 
   const [convertFile, setConvertFile] = useState<File | null>(null);
   const [convertFormat, setConvertFormat] = useState<'image/png' | 'image/jpeg' | 'image/webp'>('image/png');
@@ -268,6 +310,8 @@ const ProToolsPage: React.FC = () => {
     setResult('');
     setError(null);
     setConvertedUrl(null);
+    setEditorPrompt('');
+    setEditorHistory([]);
   }, [meta]);
 
   useEffect(() => {
@@ -308,20 +352,25 @@ const ProToolsPage: React.FC = () => {
     setFields((prev) => ({ ...prev, [key]: value }));
   };
 
+  const generateCompactAiText = async (prompt: string): Promise<string> => {
+    const stream = await generateFastText(prompt);
+    let out = '';
+    for await (const chunk of stream as AsyncIterable<{ text?: string }>) {
+      const text = chunk?.text ?? '';
+      if (text) {
+        out += text;
+      }
+    }
+    return compactPlainText(out, 90);
+  };
+
   const runAiPrompt = async (prompt: string) => {
     setLoading(true);
     setError(null);
     setResult('');
     try {
-      const stream = await generateFastText(prompt);
-      let out = '';
-      for await (const chunk of stream as AsyncIterable<{ text?: string }>) {
-        const text = chunk?.text ?? '';
-        if (text) {
-          out += text;
-          setResult(out);
-        }
-      }
+      const compact = await generateCompactAiText(prompt);
+      setResult(compact);
     } catch (e: any) {
       setError(e?.message || 'AI response aane me issue aaya.');
     } finally {
@@ -329,114 +378,100 @@ const ProToolsPage: React.FC = () => {
     }
   };
 
+  const applyEditorChanges = async () => {
+    if (!result.trim() || !editorPrompt.trim()) {
+      return;
+    }
+
+    setEditorLoading(true);
+    setError(null);
+
+    try {
+      const prompt = `You are a strict message editor.
+Current message:
+${result}
+
+Requested changes:
+${editorPrompt}
+
+Return ONLY final revised message.
+Rules: Hinglish, 60-90 words, plain text only, no code, no markdown, no bullets.`;
+
+      const revised = await generateCompactAiText(prompt);
+      setResult(revised);
+      setEditorHistory((prev) => [...prev, `You: ${editorPrompt}`, 'AI: Message updated']);
+      setEditorPrompt('');
+    } catch (e: any) {
+      setError(e?.message || 'Message edit me issue aaya.');
+    } finally {
+      setEditorLoading(false);
+    }
+  };
+
   const buildAiPrompt = (): string => {
     switch (meta.id) {
       case 'resume-cover-letter':
-        return `You are a senior career coach. Write in Hinglish.
+        return `Write ONE final ready-to-send Hinglish recruiter message.
 Role: ${fields.role}
 Experience: ${fields.experience}
 Skills: ${fields.skills}
 Achievements: ${fields.achievements}
-Return:
-1) ATS-friendly resume summary
-2) 10 bullet points for experience section
-3) Skills section
-4) Cover letter (short and personalized)
-5) Improvement tips`;
+Rules: 70-90 words, plain text only, no code, no markdown, no bullets.`;
       case 'proposal-writer':
-        return `You are a freelance proposal expert. Write in Hinglish.
+        return `Write ONE short winning Hinglish proposal message.
 Platform: ${fields.platform}
 Service: ${fields.service}
 Budget: ${fields.budget}
 Timeline: ${fields.timeline}
 Client Brief: ${fields.clientBrief}
-Generate:
-1) Winning proposal
-2) Short version
-3) 3 follow-up messages
-4) Value-based pricing explanation`;
+Rules: 70-90 words, plain text only, no code, no markdown, no bullets.`;
       case 'portfolio-builder':
-        return `Create a portfolio structure in Hinglish.
+        return `Write ONE compact Hinglish portfolio intro message.
 Niche: ${fields.niche}
 Target audience: ${fields.audience}
 Projects: ${fields.projects}
-Generate:
-1) Portfolio homepage copy
-2) 3 detailed case study templates
-3) About section
-4) CTA section
-5) Improvement checklist`;
+Rules: 60-85 words, plain text only, no markdown, no bullets.`;
       case 'thumbnail-hook-generator':
-        return `Create high CTR ideas in Hinglish.
+        return `Write ONE high-CTR Hinglish hook message.
 Platform: ${fields.platform}
 Topic: ${fields.topic}
 Audience: ${fields.audience}
-Generate:
-1) 25 thumbnail text ideas
-2) 20 hook lines for first 3 seconds
-3) 10 title variants
-4) do/dont list`;
+Rules: 35-60 words, plain text only, no markdown, no list.`;
       case 'seo-blog-toolkit':
-        return `Create SEO toolkit in Hinglish.
+        return `Write ONE crisp Hinglish SEO action note.
 Niche: ${fields.niche}
 Primary keyword: ${fields.keyword}
 Country: ${fields.country}
-Generate:
-1) Keyword clusters
-2) Search intent mapping
-3) Blog outline
-4) Meta title/description options
-5) FAQ schema in JSON-LD`;
+Rules: 60-80 words, include intent + title hint + CTA in one paragraph. No code/markdown.`;
       case 'social-calendar':
-        return `Create social content calendar in Hinglish.
+        return `Write ONE short Hinglish social content plan note.
 Niche: ${fields.niche}
 Platforms: ${fields.platforms}
 Days: ${fields.days}
-Generate:
-1) Day-wise calendar table
-2) Post format and caption for each day
-3) CTA and hashtag suggestions
-4) Repurposing plan`;
+Rules: 70-90 words, plain text only, no markdown, no bullets.`;
       case 'meeting-action-items':
-        return `Convert notes into structured output in Hinglish.
+        return `Write ONE compact Hinglish summary from notes.
 Meeting notes:
 ${fields.notes}
-Return:
-1) concise summary
-2) action items table (task, owner, priority, deadline)
-3) risks/blockers
-4) next meeting agenda`;
+Rules: 70-90 words, include objective + next actions in plain sentences only.`;
       case 'email-assistant':
-        return `Write professional client emails in Hinglish.
+        return `Write ONE final client email in Hinglish.
 Email type: ${fields.emailType}
 Tone: ${fields.tone}
 Context: ${fields.context}
-Generate:
-1) primary email
-2) shorter variant
-3) firm payment reminder version
-4) follow-up sequence (3 messages)`;
+Rules: 70-90 words, plain text only, no code, no markdown, no bullets.`;
       case 'code-bug-finder':
-        return `You are a senior software engineer. Reply in Hinglish with code blocks.
+        return `Write ONE plain-language debug note in Hinglish.
 Issue: ${fields.issue}
 Code:
 ${fields.code}
-Return:
-1) probable root causes
-2) fixed version
-3) optimized version
-4) test checklist
-5) performance tips`;
+Rules: 70-90 words, mention root issue + one fix direction. No code blocks, no markdown, no bullets.`;
       case 'interview-prep-bot':
-        return `Act as interview coach in Hinglish.
+        return `Write ONE short Hinglish interview prep message.
 Role: ${fields.role}
 Level: ${fields.level}
 Background: ${fields.background}
-Generate:
-1) 30 interview questions
-2) ideal concise answers
-3) 5 mock rounds with scoring rubric
-4) 7-day prep plan`;
+Rules: 70-90 words, action-oriented, plain text only, no markdown/bullets.`;
       default:
         return '';
     }
@@ -679,6 +714,8 @@ Size: ${(blob.size / 1024).toFixed(1)} KB`);
     }
   };
 
+  const isAiTool = meta.mode === 'ai' && AI_TOOL_IDS.includes(meta.id);
+
   return (
     <div className="container mx-auto max-w-4xl animate-fadeIn space-y-6">
       <Link to="/" className="inline-block text-brand-accent hover:underline">
@@ -910,7 +947,7 @@ Size: ${(blob.size / 1024).toFixed(1)} KB`);
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-accent px-6 py-3 font-semibold text-white transition hover:bg-brand-accent-light disabled:opacity-60"
           >
             {loading ? <RefreshCw size={18} className="animate-spin" /> : null}
-            {loading ? 'Processing...' : meta.mode === 'ai' ? 'Generate' : 'Run Tool'}
+            {loading ? 'Processing...' : meta.mode === 'ai' ? 'Generate Short Message' : 'Run Tool'}
           </button>
         )}
       </div>
@@ -931,9 +968,51 @@ Size: ${(blob.size / 1024).toFixed(1)} KB`);
               </button>
             )}
           </div>
-          <pre className="max-h-[540px] overflow-auto whitespace-pre-wrap rounded-xl bg-brand-primary/60 p-4 text-sm text-brand-text-secondary">
-            {loading && !result ? 'Generating output...' : result}
-          </pre>
+
+          {isAiTool ? (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-brand-text-secondary/15 bg-brand-primary/50 p-4 text-base leading-relaxed text-brand-text">
+                {loading && !result ? 'Generating short message...' : result}
+              </div>
+
+              {result && (
+                <div className="rounded-xl border border-brand-accent/20 bg-brand-accent/5 p-4">
+                  <p className="mb-3 text-sm font-bold text-brand-text">Message kaisa laga? Kya change karna hai?</p>
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <textarea
+                      value={editorPrompt}
+                      onChange={(e) => setEditorPrompt(e.target.value)}
+                      rows={3}
+                      placeholder="Jaise: tone friendly karo, 2 line aur short karo, CTA add karo..."
+                      className="w-full rounded-xl border border-brand-text-secondary/20 bg-brand-primary/50 px-4 py-3 text-brand-text outline-none focus:border-brand-accent/40"
+                    />
+                    <button
+                      onClick={() => {
+                        void applyEditorChanges();
+                      }}
+                      disabled={editorLoading || !editorPrompt.trim()}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-accent px-4 py-3 font-semibold text-white disabled:opacity-60"
+                    >
+                      {editorLoading ? <RefreshCw size={16} className="animate-spin" /> : <MessageSquare size={16} />}
+                      Apply Changes
+                    </button>
+                  </div>
+
+                  {editorHistory.length > 0 && (
+                    <div className="mt-3 rounded-lg bg-brand-primary/40 p-3 text-xs text-brand-text-secondary">
+                      {editorHistory.slice(-4).map((item, idx) => (
+                        <p key={idx}>{item}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <pre className="max-h-[540px] overflow-auto whitespace-pre-wrap rounded-xl bg-brand-primary/60 p-4 text-sm text-brand-text-secondary">
+              {loading && !result ? 'Generating output...' : result}
+            </pre>
+          )}
         </div>
       )}
     </div>

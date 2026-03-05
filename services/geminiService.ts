@@ -116,6 +116,20 @@ const callGeminiApi = async <T>(action: string, payload: Record<string, unknown>
   return parsed.data as T;
 };
 
+const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string): Promise<T> =>
+  new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+    promise
+      .then((result) => {
+        clearTimeout(timer);
+        resolve(result);
+      })
+      .catch((error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+
 export const getFriendlyAiErrorMessage = (error: unknown, fallbackMessage: string): string => {
   const raw = errorToString(error);
   const normalized = raw.toLowerCase();
@@ -395,8 +409,8 @@ const normalizeGeneratedContent = (skillName: string, payload: unknown): Generat
 };
 
 export const generateSkillContent = async (skillName: string): Promise<GeneratedContent> => {
-  const cacheKey = `skill-content-${skillName}`;
   const preferredLanguage = getPreferredLanguageHint();
+  const cacheKey = `skill-content-${preferredLanguage}-${skillName}`;
 
   try {
     const cachedContent = sessionStorage.getItem(cacheKey);
@@ -414,10 +428,14 @@ export const generateSkillContent = async (skillName: string): Promise<Generated
 
   try {
     void logUsageEvent('tool_action', { toolId: 'course-generator', action: 'generate_course', skillName });
-    const data = await callGeminiApi<{ jsonText: string }>('generateSkillContent', {
-      skillName,
-      preferredLanguage,
-    });
+    const data = await withTimeout(
+      callGeminiApi<{ jsonText: string }>('generateSkillContent', {
+        skillName,
+        preferredLanguage,
+      }),
+      12000,
+      'Course generation timeout'
+    );
     const parsedJson = JSON.parse(data.jsonText || '{}');
     const normalizedContent = normalizeGeneratedContent(skillName, parsedJson);
     try {
