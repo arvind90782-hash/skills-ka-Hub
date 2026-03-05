@@ -51,6 +51,11 @@
 
   html {
     scroll-behavior: smooth;
+    scroll-padding-top: 96px;
+  }
+
+  * {
+    scroll-behavior: smooth;
   }
 }
 
@@ -78,6 +83,11 @@
 
   .backface-hidden {
     backface-visibility: hidden;
+  }
+
+  .motion-smooth {
+    transform: translateZ(0);
+    will-change: transform, opacity;
   }
 }
 
@@ -107,5 +117,11 @@
   background: #8E8E93;
   border-radius: 10px;
   border: 2px solid transparent;
+  background-clip: content-box;
+  transition: background-color 200ms var(--ios-ease);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #007AFF;
   background-clip: content-box;
 }

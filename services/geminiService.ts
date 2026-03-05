@@ -245,6 +245,86 @@ const buildLocalCourseFallback = (skillName: string): GeneratedContent => ({
         { type: 'tip', text: 'Har project ka checklist banao. Quality aur speed dono improve honge.' },
       ],
     },
+    {
+      title: `Client Communication Blueprint`,
+      imageSuggestion: `${skillName} freelancer talking to client on call with notes`,
+      motionStoryboard: 'Chat bubbles appear with checklist highlights.',
+      content: [
+        { type: 'heading', text: 'Client ko impress karne ka simple communication flow' },
+        {
+          type: 'paragraph',
+          text: 'Har client message me 3 cheezein clear rakho: goal, timeline, next action. Isse trust instantly build hota hai.',
+        },
+        {
+          type: 'qAndA',
+          question: 'Client ghost kare to kya karu?',
+          answer: '48 hours ke gap ke baad short polite follow-up bhejo with one clear next step.',
+        },
+        {
+          type: 'quiz',
+          question: 'Best client update format kya hai?',
+          options: ['Long random paragraph', 'Short status + next step + ETA', 'No update until final delivery'],
+          correctAnswerIndex: 1,
+          explanation: 'Concise status + clear next step se clarity aur confidence dono improve hote hain.',
+        },
+        {
+          type: 'poll',
+          question: 'Aap client updates kitni frequency se bhejte ho?',
+          options: ['Daily', 'Alternate day', 'Sirf jab client puchhe'],
+        },
+      ],
+    },
+    {
+      title: `Portfolio to Projects`,
+      imageSuggestion: `${skillName} project cards and portfolio showcase`,
+      motionStoryboard: 'Cards slide in and expand one by one.',
+      content: [
+        { type: 'heading', text: 'Portfolio ko project machine kaise banayein' },
+        {
+          type: 'paragraph',
+          text: 'Har project me problem, process, aur result format follow karo. Ye format clients ko fast decision lene me help karta hai.',
+        },
+        {
+          type: 'template',
+          text: 'Case Study Template:\n1) Problem\n2) Approach\n3) Tools\n4) Final Output\n5) Measurable Result',
+        },
+        {
+          type: 'doAndDont',
+          dos: ['Before/after dikhayein', 'Numbers mention karein', 'Screenshots clean rakhein'],
+          donts: ['Only pretty visuals', 'No context', 'No result mention'],
+        },
+        {
+          type: 'flashcard',
+          front: 'Portfolio ka sabse important section?',
+          back: 'Result-oriented case studies with measurable impact.',
+        },
+      ],
+    },
+    {
+      title: `Income Growth Plan`,
+      imageSuggestion: `${skillName} freelancer growth graph with milestones`,
+      motionStoryboard: 'Graph line rises with milestone popups.',
+      content: [
+        { type: 'heading', text: 'Skill se stable income roadmap' },
+        {
+          type: 'paragraph',
+          text: 'Starter offer se start karo, phir testimonials ke basis pe pricing increment plan banao. Har 3 projects baad rate review karo.',
+        },
+        {
+          type: 'benefits',
+          text: 'Structured growth plan se stress kam hota hai aur predictable monthly income build hoti hai.',
+        },
+        {
+          type: 'poll',
+          question: 'Next 30 days me aapka focus kya hoga?',
+          options: ['Portfolio improve', 'Client outreach', 'Skill depth + speed'],
+        },
+        {
+          type: 'ideaCorner',
+          prompt: `Aaj ${skillName} me ek micro-offer design karo jo 3 din me deliver ho sake aur repeat client generate kare.`,
+        },
+      ],
+    },
   ],
 });
 

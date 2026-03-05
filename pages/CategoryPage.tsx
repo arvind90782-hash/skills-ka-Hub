@@ -1,7 +1,19 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ArrowLeft, Play, Pause, Loader2, Clapperboard, Lightbulb, ListChecks } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  ArrowLeft,
+  Play,
+  Pause,
+  Loader2,
+  Clapperboard,
+  Lightbulb,
+  ListChecks,
+  Sparkles,
+  ExternalLink,
+} from 'lucide-react';
 import { SKILLS } from '../constants';
 import type {
   GeneratedContent,
@@ -39,6 +51,32 @@ const LESSON_VIDEOS = [
   'https://cdn.pixabay.com/video/2021/08/04/83854-584418641_large.mp4',
   'https://cdn.pixabay.com/video/2020/03/24/34015-399677271_large.mp4',
 ];
+
+const makeTrustedSourceLinks = (skillName: string, pageTitle: string) => {
+  const query = encodeURIComponent(`${skillName} ${pageTitle} tutorial guide`);
+  return [
+    {
+      label: 'Google',
+      href: `https://www.google.com/search?q=${query}`,
+      note: 'Quick verified web results',
+    },
+    {
+      label: 'YouTube',
+      href: `https://www.youtube.com/results?search_query=${query}`,
+      note: 'Video walkthroughs and demos',
+    },
+    {
+      label: 'Reddit',
+      href: `https://www.reddit.com/search/?q=${query}`,
+      note: 'Community discussion and practical tips',
+    },
+    {
+      label: 'Pinterest',
+      href: `https://in.pinterest.com/search/pins/?q=${query}`,
+      note: 'Visual references and idea boards',
+    },
+  ];
+};
 
 const textFromBlock = (block: ContentBlock): string => {
   switch (block.type) {
@@ -234,6 +272,45 @@ const CategoryPage: React.FC = () => {
     'Agar client ko ye topic samjhana ho, tum kaise explain karoge?',
   ];
 
+  const stepFlow = [
+    `Step 1: ${currentSubPage.title} ka objective clear karo aur expected output likho.`,
+    `Step 2: Video section dekhkar kam se kam 3 practical notes likho.`,
+    `Step 3: Visual points me se 1 point choose karke mini task execute karo.`,
+    'Step 4: Quick Q&A, Poll aur Quiz solve karo for instant recall.',
+    'Step 5: Apna final output publish karo aur next page pe improve version banao.',
+  ];
+
+  const trustedSources = makeTrustedSourceLinks(skill.name, currentSubPage.title);
+  const existingQnA = currentSubPage.content.find((block) => block.type === 'qAndA') as QAndABlockType | undefined;
+  const existingPoll = currentSubPage.content.find((block) => block.type === 'poll') as PollBlockType | undefined;
+  const existingQuiz = currentSubPage.content.find((block) => block.type === 'quiz') as QuizBlockType | undefined;
+
+  const quickQnA: QAndABlockType =
+    existingQnA ??
+    ({
+      type: 'qAndA',
+      question: `${currentSubPage.title} ka fastest starting point kya hai?`,
+      answer: visualHighlights[0] || 'Pehle objective clear karo, phir ek small action lekar start karo.',
+    } as QAndABlockType);
+
+  const quickPoll: PollBlockType =
+    existingPoll ??
+    ({
+      type: 'poll',
+      question: 'Aapka preferred learning style kya hai?',
+      options: ['Pehle video phir practice', 'Pehle reading phir notes', 'Direct project build karke seekhna'],
+    } as PollBlockType);
+
+  const quickQuiz: QuizBlockType =
+    existingQuiz ??
+    ({
+      type: 'quiz',
+      question: `${currentSubPage.title} me best first step kaunsa hai?`,
+      options: ['Objective clear karna', 'Random advanced tool se start karna', 'Bina plan practice skip karna'],
+      correctAnswerIndex: 0,
+      explanation: 'Clear objective se speed, accuracy aur confidence teeno improve hote hain.',
+    } as QuizBlockType);
+
   const renderContentBlock = (block: ContentBlock, index: number) => {
     const blockId = `${currentPage}-${index}`;
     const isPlaying = playingBlock === blockId;
@@ -403,7 +480,7 @@ const CategoryPage: React.FC = () => {
   };
 
   return (
-    <div className="mx-auto max-w-4xl pb-24">
+    <div className="mx-auto max-w-4xl pb-24 motion-smooth">
       <Link to="/" className="group mb-8 inline-flex items-center gap-2 text-brand-text-secondary transition-colors hover:text-brand-accent">
         <div className="rounded-full p-2 ios-glass transition-all group-hover:bg-brand-accent group-hover:text-white">
           <ChevronLeft size={20} />
@@ -449,6 +526,26 @@ const CategoryPage: React.FC = () => {
                     <p className="text-sm leading-relaxed text-brand-text-secondary">{highlight}</p>
                   </div>
                 ))}
+              </div>
+
+              <div className="mb-10 ios-card border border-brand-accent/15 p-5">
+                <p className="mb-4 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-accent">
+                  <Sparkles size={14} />
+                  Step-by-Step Fast Learning Flow
+                </p>
+                <div className="space-y-3">
+                  {stepFlow.map((step, idx) => (
+                    <motion.div
+                      key={`${currentPage}-step-${idx}`}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.06 }}
+                      className="rounded-xl border border-brand-text-secondary/10 bg-brand-primary/40 p-3"
+                    >
+                      <p className="text-sm font-semibold text-brand-text">{step}</p>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
 
               <motion.div
@@ -502,6 +599,44 @@ const CategoryPage: React.FC = () => {
                       <div key={`${currentPage}-question-${idx}`} className="rounded-xl bg-brand-primary/40 p-3">
                         <p className="text-sm font-semibold text-brand-text">Q{idx + 1}. {question}</p>
                       </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-10 space-y-6">
+                <div className="ios-card border border-brand-accent/20 p-5">
+                  <p className="mb-3 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-accent">
+                    <ListChecks size={14} />
+                    Quick Practice Zone
+                  </p>
+                  <div className="space-y-4">
+                    <QAndABlock block={quickQnA} />
+                    <PollBlock block={quickPoll} />
+                    <QuizBlock block={quickQuiz} />
+                  </div>
+                </div>
+
+                <div className="ios-card border border-brand-accent/20 p-5">
+                  <p className="mb-3 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-accent">
+                    <ExternalLink size={14} />
+                    Trusted Learning Sources
+                  </p>
+                  <p className="mb-4 text-sm text-brand-text-secondary">
+                    Is topic ko aur deep samajhne ke liye niche trusted source links diye gaye hain.
+                  </p>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {trustedSources.map((source) => (
+                      <a
+                        key={`${currentPage}-${source.label}`}
+                        href={source.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-xl border border-brand-text-secondary/10 bg-brand-primary/40 p-3 transition hover:border-brand-accent/40"
+                      >
+                        <p className="text-sm font-black text-brand-text">{source.label}</p>
+                        <p className="text-xs text-brand-text-secondary">{source.note}</p>
+                      </a>
                     ))}
                   </div>
                 </div>

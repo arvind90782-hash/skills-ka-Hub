@@ -121,9 +121,12 @@ Return STRICT JSON:
   ]
 }
 
-Generate exactly 6 subPages for faster loading.
-Keep each block concise (2-4 lines max).
-Use mixed block types across the module: heading, paragraph, tip, template, benefits, infographic, funFact, quiz, qAndA, doAndDont.
+Generate exactly 8 subPages.
+Each subPage should include practical step-by-step explanation.
+Keep each block concise (2-4 lines max) but meaningful.
+Every subPage must include at least one interactive block from: quiz, poll, qAndA, doAndDont, flashcard.
+Use mixed block types across the module: heading, paragraph, tip, template, benefits, infographic, funFact, quiz, poll, qAndA, doAndDont, flashcard.
+Make explanations actionable, engaging, beginner-friendly, and project-oriented.
 Avoid extra text outside JSON.
 `;
 
