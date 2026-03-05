@@ -46,6 +46,9 @@ import IdeaCornerBlock from '../components/IdeaCornerBlock';
 import FlashcardBlock from '../components/FlashcardBlock';
 import { useLocale } from '../hooks/useLocale';
 import { logUsageEvent } from '../services/analyticsService';
+import { useAuth } from '../hooks/useAuth';
+import { firestoreDb } from '../services/firebase';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 
 type GiftResource = {
   title: string;
@@ -54,11 +57,11 @@ type GiftResource = {
   tag: string;
 };
 
-const LESSON_VIDEOS = [
-  'https://cdn.pixabay.com/video/2024/02/16/200854-913632171_large.mp4',
-  'https://cdn.pixabay.com/video/2021/08/04/83854-584418641_large.mp4',
-  'https://cdn.pixabay.com/video/2020/03/24/34015-399677271_large.mp4',
-];
+type AssetResource = {
+  name: string;
+  url: string;
+  type: 'pack' | 'template' | 'tool';
+};
 
 const DEFAULT_GIFTS: GiftResource[] = [
   {
@@ -126,30 +129,37 @@ const SKILL_GIFT_MAP: Record<string, GiftResource> = {
   },
 };
 
-const makeTrustedSourceLinks = (skillName: string, pageTitle: string) => {
-  const query = encodeURIComponent(`${skillName} ${pageTitle} tutorial guide`);
-  return [
-    {
-      label: 'Google',
-      href: `https://www.google.com/search?q=${query}`,
-      note: 'Quick verified web results',
-    },
-    {
-      label: 'YouTube',
-      href: `https://www.youtube.com/results?search_query=${query}`,
-      note: 'Video walkthroughs and demos',
-    },
-    {
-      label: 'Reddit',
-      href: `https://www.reddit.com/search/?q=${query}`,
-      note: 'Community discussion and practical tips',
-    },
-    {
-      label: 'Pinterest',
-      href: `https://in.pinterest.com/search/pins/?q=${query}`,
-      note: 'Visual references and idea boards',
-    },
-  ];
+const ASSET_PACKS: Record<string, AssetResource[]> = {
+  'graphic-design': [
+    { name: 'Blush Illustration Pack', url: 'https://blush.design/', type: 'pack' },
+    { name: 'UI Faces Avatar Pack', url: 'https://uifaces.co/', type: 'template' },
+    { name: 'Haikei Shape Generator', url: 'https://haikei.app/', type: 'tool' },
+  ],
+  'video-editing': [
+    { name: 'Mixkit Motion Assets', url: 'https://mixkit.co/free-stock-video/', type: 'pack' },
+    { name: 'CapCut Templates', url: 'https://www.capcut.com/templates', type: 'template' },
+    { name: 'Ezgif Toolkit', url: 'https://ezgif.com/', type: 'tool' },
+  ],
+  'content-writing': [
+    { name: 'Notion Writing OS', url: 'https://www.notion.so/templates', type: 'template' },
+    { name: 'Headline Analyzer', url: 'https://www.monsterinsights.com/headline-analyzer/', type: 'tool' },
+    { name: 'LanguageTool', url: 'https://languagetool.org/', type: 'tool' },
+  ],
+  programming: [
+    { name: 'Shadcn UI Blocks', url: 'https://ui.shadcn.com/blocks', type: 'pack' },
+    { name: 'Front-end Checklist', url: 'https://frontendchecklist.io/', type: 'template' },
+    { name: 'Carbon Snippet Maker', url: 'https://carbon.now.sh/', type: 'tool' },
+  ],
+  'digital-marketing': [
+    { name: 'Canva Marketing Kit', url: 'https://www.canva.com/templates/marketing/', type: 'pack' },
+    { name: 'HubSpot Templates', url: 'https://www.hubspot.com/resources/templates', type: 'template' },
+    { name: 'AnswerThePublic', url: 'https://answerthepublic.com/', type: 'tool' },
+  ],
+  animation: [
+    { name: 'LottieFiles Pack', url: 'https://lottiefiles.com/free-animations', type: 'pack' },
+    { name: 'Spline Scenes', url: 'https://spline.design/community', type: 'template' },
+    { name: 'Rive Playground', url: 'https://rive.app/', type: 'tool' },
+  ],
 };
 
 const textFromBlock = (block: ContentBlock): string => {
@@ -178,6 +188,7 @@ const textFromBlock = (block: ContentBlock): string => {
 const CategoryPage: React.FC = () => {
   const { categoryId } = useParams<{ categoryId: string }>();
   const { t, localizeItem } = useLocale();
+  const { user } = useAuth();
   const [content, setContent] = useState<GeneratedContent | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -188,7 +199,9 @@ const CategoryPage: React.FC = () => {
   const [feedbackText, setFeedbackText] = useState('');
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [activityChecks, setActivityChecks] = useState<boolean[]>([]);
-  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const [isSpecialMember, setIsSpecialMember] = useState(false);
+  const [claimingMember, setClaimingMember] = useState(false);
+  const [memberNotice, setMemberNotice] = useState('');
 
   const skill = useMemo(() => {
     const found = SKILLS.find((s) => s.id === categoryId);
@@ -254,6 +267,7 @@ const CategoryPage: React.FC = () => {
   const currentSubPage: SubPage | null = subPages[currentPage] ?? null;
   const activityStorageKey = `course-activity-${skill?.id || 'unknown'}-${currentPage}`;
   const feedbackStorageKey = `course-feedback-${skill?.id || 'unknown'}`;
+  const memberStorageKey = `special-member-${skill?.id || 'unknown'}`;
   const currentTitle = currentSubPage?.title ?? 'Learning Section';
   const quickActivitiesSeed = [
     `2-minute recap: ${currentTitle} ka summary bolo.`,
@@ -309,6 +323,15 @@ const CategoryPage: React.FC = () => {
       // ignore
     }
   }, [feedbackStorageKey]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(memberStorageKey);
+      setIsSpecialMember(raw === '1');
+    } catch {
+      setIsSpecialMember(false);
+    }
+  }, [memberStorageKey]);
 
   const handleNext = () => {
     if (subPages.length === 0) {
@@ -391,7 +414,6 @@ const CategoryPage: React.FC = () => {
   }
 
   const progressPercentage = ((currentPage + 1) / subPages.length) * 100;
-  const lessonVideoUrl = LESSON_VIDEOS[currentPage % LESSON_VIDEOS.length];
   const visualHighlights = currentSubPage.content
     .map((block) => textFromBlock(block))
     .filter((text) => text.trim().length > 0)
@@ -454,27 +476,9 @@ const CategoryPage: React.FC = () => {
     { label: 'Speed Learning', value: Math.min(95, 54 + currentPage * 5) },
   ];
 
-  const faqItems = [
-    {
-      q: `${skill.name} seekhne ka fastest path kya hai?`,
-      a: 'Daily short practice + weekly mini project + real feedback cycle. Sirf content consume mat karo, output build karo.',
-    },
-    {
-      q: 'Agar topic difficult lage to kya karu?',
-      a: 'Topic ko micro-steps me tod do: observe, replicate, customize, publish. Har step ke baad quick revision karo.',
-    },
-    {
-      q: 'Client-ready hone me kitna time lag sakta hai?',
-      a: 'Consistency par depend karta hai, lekin focused routine ke saath 4-8 hafton me strong beginner level aa sakta hai.',
-    },
-    {
-      q: 'Is course ko YouTube se better kaise use karu?',
-      a: 'Yahan structured flow + activities + checkpoints + feedback loop use karo. Har page ko ek mini mission treat karo.',
-    },
-  ];
-
   const giftResource = SKILL_GIFT_MAP[skill.id] || DEFAULT_GIFTS[currentPage % DEFAULT_GIFTS.length];
   const giftUnlocked = currentPage === subPages.length - 1;
+  const assetPack = ASSET_PACKS[skill.id] || ASSET_PACKS.programming;
 
   const stepFlow = [
     `Step 1: ${currentSubPage.title} ka objective clear karo aur expected output likho.`,
@@ -484,7 +488,6 @@ const CategoryPage: React.FC = () => {
     'Step 5: Apna final output publish karo aur next page pe improve version banao.',
   ];
 
-  const trustedSources = makeTrustedSourceLinks(skill.name, currentSubPage.title);
   const existingQnA = currentSubPage.content.find((block) => block.type === 'qAndA') as QAndABlockType | undefined;
   const existingPoll = currentSubPage.content.find((block) => block.type === 'poll') as PollBlockType | undefined;
   const existingQuiz = currentSubPage.content.find((block) => block.type === 'quiz') as QuizBlockType | undefined;
@@ -538,6 +541,42 @@ const CategoryPage: React.FC = () => {
       action: 'submit_feedback',
       rating: feedbackRating,
     });
+  };
+
+  const claimSpecialMember = async () => {
+    if (currentPage !== subPages.length - 1) {
+      setMemberNotice('Special member unlock ke liye course ka last page complete karo.');
+      return;
+    }
+
+    setClaimingMember(true);
+    setMemberNotice('');
+    try {
+      localStorage.setItem(memberStorageKey, '1');
+      setIsSpecialMember(true);
+
+      if (user?.uid && firestoreDb) {
+        await setDoc(
+          doc(firestoreDb, 'users', user.uid),
+          {
+            specialMember: true,
+            specialMemberSkill: skill.id,
+            specialMemberAt: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      }
+
+      setMemberNotice('Special member unlock ho gaya. Congrats!');
+      void logUsageEvent('tool_action', {
+        toolId: `course-special-member-${skill.id}`,
+        action: 'claim_member',
+      });
+    } catch {
+      setMemberNotice('Member unlock save nahi ho paaya. Dobara try karo.');
+    } finally {
+      setClaimingMember(false);
+    }
   };
 
   const renderContentBlock = (block: ContentBlock, index: number) => {
@@ -745,6 +784,15 @@ const CategoryPage: React.FC = () => {
                 </h1>
               </div>
 
+              {currentPage === 0 && (
+                <div className="mb-8 ios-card border border-emerald-400/30 bg-emerald-500/10 p-4">
+                  <p className="text-xs font-black uppercase tracking-widest text-emerald-400">Course Rewards</p>
+                  <p className="mt-2 text-sm font-semibold text-brand-text">
+                    Is course ko end tak complete karoge to tumhe Special Member badge + Powerful Assets Pack unlock milega.
+                  </p>
+                </div>
+              )}
+
               <div className="mb-10 grid gap-4 md:grid-cols-3">
                 {visualHighlights.map((highlight, idx) => (
                   <div key={`${currentPage}-highlight-${idx}`} className="ios-card border border-brand-accent/10 p-4">
@@ -802,31 +850,48 @@ const CategoryPage: React.FC = () => {
                 <div className="ios-card overflow-hidden border border-brand-accent/20 p-4">
                   <p className="mb-3 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-accent">
                     <Clapperboard size={14} />
-                    Visual Lesson Video
+                    Motion Graphic Explainer
                   </p>
-                  <video
-                    key={`${currentPage}-video`}
-                    controls
-                    preload="metadata"
-                    poster={`https://picsum.photos/seed/${encodeURIComponent(currentSubPage.title)}/1200/600`}
-                    className="aspect-video w-full rounded-xl border border-brand-text-secondary/10 bg-black/40"
-                  >
-                    <source src={lessonVideoUrl} type="video/mp4" />
-                  </video>
+                  <div className="relative aspect-video overflow-hidden rounded-xl border border-brand-text-secondary/10 bg-brand-primary/50 p-4">
+                    <motion.div
+                      className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-brand-accent/20 blur-2xl"
+                      animate={{ scale: [1, 1.15, 1], opacity: [0.25, 0.5, 0.25] }}
+                      transition={{ repeat: Infinity, duration: 3 }}
+                    />
+                    <motion.div
+                      className="absolute -bottom-8 -left-8 h-28 w-28 rounded-full bg-cyan-400/20 blur-2xl"
+                      animate={{ scale: [1.1, 1, 1.1], opacity: [0.35, 0.2, 0.35] }}
+                      transition={{ repeat: Infinity, duration: 3.2 }}
+                    />
+                    <div className="relative z-10 space-y-3">
+                      {['Kaha se start hua', 'Kya challenge tha', 'Kaise solve hua', 'Kya result mila'].map((item, idx) => (
+                        <motion.div
+                          key={`${currentPage}-motion-${idx}`}
+                          initial={{ x: -20, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{ delay: idx * 0.12 }}
+                          className="rounded-lg border border-brand-text-secondary/15 bg-brand-primary/60 px-3 py-2"
+                        >
+                          <p className="text-xs font-bold text-brand-text">{idx + 1}. {item}</p>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </div>
                   <p className="mt-3 text-sm text-brand-text-secondary">
-                    Video dekhne ke baad neeche ke questions ka answer khud se likho. Isse retention aur speed dono improve hoti hai.
+                    Is motion explain block ko step flow ke saath padhkar aage practice zone complete karo. Ye section stock footage ke bina concept ko visual logic me todta hai.
                   </p>
                 </div>
 
                 <div className="ios-card border border-brand-accent/20 p-4">
                   <p className="mb-3 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-accent">
                     <ListChecks size={14} />
-                    Speed Check Questions
+                    Kaha, Kya, Kaise, Kyun
                   </p>
-                  <div className="space-y-3">
-                    {practiceQuestions.map((question, idx) => (
-                      <div key={`${currentPage}-question-${idx}`} className="rounded-xl bg-brand-primary/40 p-3">
-                        <p className="text-sm font-semibold text-brand-text">Q{idx + 1}. {question}</p>
+                  <div className="grid gap-3">
+                    {deepDiveCards.map((card, idx) => (
+                      <div key={`${currentPage}-deep-${idx}`} className="rounded-xl border border-brand-text-secondary/10 bg-brand-primary/40 p-3">
+                        <p className="text-xs font-black uppercase tracking-widest text-brand-accent">{card.title}</p>
+                        <p className="mt-1 text-sm text-brand-text-secondary">{card.content}</p>
                       </div>
                     ))}
                   </div>
@@ -848,24 +913,17 @@ const CategoryPage: React.FC = () => {
 
                 <div className="ios-card border border-brand-accent/20 p-5">
                   <p className="mb-3 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-accent">
-                    <ExternalLink size={14} />
-                    Trusted Learning Sources
+                    <ListChecks size={14} />
+                    Speed Check Questions
                   </p>
                   <p className="mb-4 text-sm text-brand-text-secondary">
-                    Is topic ko aur deep samajhne ke liye niche trusted source links diye gaye hain.
+                    In 3 quick questions ka answer dimaag me ya notes me likho. Learning 10x fast hoti hai.
                   </p>
-                  <div className="grid gap-3 md:grid-cols-2">
-                    {trustedSources.map((source) => (
-                      <a
-                        key={`${currentPage}-${source.label}`}
-                        href={source.href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-xl border border-brand-text-secondary/10 bg-brand-primary/40 p-3 transition hover:border-brand-accent/40"
-                      >
-                        <p className="text-sm font-black text-brand-text">{source.label}</p>
-                        <p className="text-xs text-brand-text-secondary">{source.note}</p>
-                      </a>
+                  <div className="space-y-3">
+                    {practiceQuestions.map((question, idx) => (
+                      <div key={`${currentPage}-question-${idx}`} className="rounded-xl border border-brand-text-secondary/10 bg-brand-primary/40 p-3">
+                        <p className="text-sm font-semibold text-brand-text">Q{idx + 1}. {question}</p>
+                      </div>
                     ))}
                   </div>
                 </div>
@@ -938,31 +996,62 @@ const CategoryPage: React.FC = () => {
                 <div className="ios-card border border-brand-accent/20 p-5">
                   <p className="mb-3 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-accent">
                     <Sparkles size={14} />
-                    End Reward
+                    End Reward + Special Member
                   </p>
                   {!giftUnlocked ? (
                     <div className="rounded-xl border border-brand-text-secondary/10 bg-brand-primary/40 p-4">
                       <p className="text-sm font-semibold text-brand-text">
-                        Gift unlock karne ke liye last page tak complete karo.
+                        Assets pack unlock karne ke liye last page tak complete karo.
                       </p>
                       <p className="mt-2 text-sm text-brand-text-secondary">
-                        Last page pe ek hidden useful resource/tool milega jo daily workflow ko upgrade karega.
+                        Last page pe special member claim + hidden high-value resources milenge.
                       </p>
                     </div>
                   ) : (
-                    <a
-                      href={giftResource.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-4 transition hover:border-emerald-400/60"
-                    >
-                      <p className="text-xs font-black uppercase tracking-widest text-emerald-400">{giftResource.tag}</p>
-                      <h3 className="mt-1 text-lg font-black text-brand-text">{giftResource.title}</h3>
-                      <p className="mt-2 text-sm text-brand-text-secondary">{giftResource.description}</p>
-                      <p className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-emerald-400">
-                        Open Resource <ExternalLink size={14} />
-                      </p>
-                    </a>
+                    <div className="space-y-3">
+                      <a
+                        href={giftResource.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-4 transition hover:border-emerald-400/60"
+                      >
+                        <p className="text-xs font-black uppercase tracking-widest text-emerald-400">{giftResource.tag}</p>
+                        <h3 className="mt-1 text-lg font-black text-brand-text">{giftResource.title}</h3>
+                        <p className="mt-2 text-sm text-brand-text-secondary">{giftResource.description}</p>
+                        <p className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-emerald-400">
+                          Open Featured Gift <ExternalLink size={14} />
+                        </p>
+                      </a>
+
+                      <div className="rounded-xl border border-brand-text-secondary/10 bg-brand-primary/40 p-4">
+                        <p className="text-xs font-black uppercase tracking-widest text-brand-accent">Powerful Assets Pack</p>
+                        <div className="mt-2 space-y-2">
+                          {assetPack.map((asset) => (
+                            <a
+                              key={`${currentPage}-${asset.name}`}
+                              href={asset.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center justify-between rounded-lg border border-brand-text-secondary/10 bg-brand-primary/40 px-3 py-2 text-sm transition hover:border-brand-accent/40"
+                            >
+                              <span className="font-semibold text-brand-text">{asset.name}</span>
+                              <span className="text-xs font-bold uppercase text-brand-accent">{asset.type}</span>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          void claimSpecialMember();
+                        }}
+                        disabled={claimingMember || isSpecialMember}
+                        className="w-full rounded-xl bg-brand-accent px-4 py-2 text-sm font-bold text-white disabled:opacity-60"
+                      >
+                        {isSpecialMember ? 'Special Member Active' : claimingMember ? 'Activating...' : 'Claim Special Member'}
+                      </button>
+                      {memberNotice && <p className="text-xs font-semibold text-brand-text-secondary">{memberNotice}</p>}
+                    </div>
                   )}
                 </div>
 
@@ -1000,38 +1089,6 @@ const CategoryPage: React.FC = () => {
                   >
                     {feedbackSubmitted ? 'Feedback Saved' : 'Submit Feedback'}
                   </button>
-                </div>
-              </div>
-
-              <div className="mb-10 ios-card border border-brand-accent/20 p-5">
-                <p className="mb-3 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-accent">
-                  <ListChecks size={14} />
-                  FAQ
-                </p>
-                <div className="space-y-2">
-                  {faqItems.map((item, idx) => (
-                    <div key={`${currentPage}-faq-${idx}`} className="rounded-xl border border-brand-text-secondary/10 bg-brand-primary/40">
-                      <button
-                        onClick={() => setOpenFaqIndex((prev) => (prev === idx ? null : idx))}
-                        className="flex w-full items-center justify-between px-4 py-3 text-left"
-                      >
-                        <span className="text-sm font-bold text-brand-text">{item.q}</span>
-                        <span className="text-brand-accent">{openFaqIndex === idx ? '−' : '+'}</span>
-                      </button>
-                      <AnimatePresence>
-                        {openFaqIndex === idx && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden px-4 pb-4"
-                          >
-                            <p className="text-sm text-brand-text-secondary">{item.a}</p>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  ))}
                 </div>
               </div>
 

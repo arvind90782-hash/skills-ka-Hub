@@ -270,3 +270,31 @@ export const TOOLS: Tool[] = [
     path: '/tools/habit-sprint-tracker',
   },
 ];
+
+export const MAKER_PROFILE = {
+  name: 'Editor Nishant',
+  role: 'Video Editor + Developer',
+  bio: 'Main is website ka maker hoon. Mera focus creative learning experiences, smooth UI animations, aur practical skill growth systems banana hai.',
+  email: 'arvind90782@gmail.com',
+  website: 'https://skillskahub.vercel.app',
+  instagram: 'https://instagram.com/editor.nishant',
+};
+
+export const WEBSITE_FAQ = [
+  {
+    q: 'Ye website kis ke liye hai?',
+    a: 'Beginners aur freelancers dono ke liye. Yahan structured courses, AI tools, practice flow aur real output system diya gaya hai.',
+  },
+  {
+    q: 'Kya courses full practical hain?',
+    a: 'Haan. Har course me step-by-step flow, quick checks, quizzes, activity board aur reward unlock system diya gaya hai.',
+  },
+  {
+    q: 'Special member kaise bante hain?',
+    a: 'Course end tak complete karke last page par special member claim karo. Fir assets pack aur member perks unlock ho jate hain.',
+  },
+  {
+    q: 'Agar app slow lage ya error aaye to?',
+    a: 'Reload karo aur dobara try karo. Agar issue rahe to maker section me diye contact pe details share karo.',
+  },
+];
