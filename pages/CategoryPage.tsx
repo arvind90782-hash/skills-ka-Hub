@@ -49,6 +49,15 @@ import { logUsageEvent } from '../services/analyticsService';
 import { useAuth } from '../hooks/useAuth';
 import { firestoreDb } from '../services/firebase';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import {
+  getCourseSummary,
+  markLessonCompleted,
+  markMiniChallengeCompleted,
+  markPollVoted,
+  markQnaAnswered,
+  markQuizAttempted,
+  type CourseProgressSummary,
+} from '../services/courseProgressService';
 
 type GiftResource = {
   title: string;
@@ -202,6 +211,8 @@ const CategoryPage: React.FC = () => {
   const [isSpecialMember, setIsSpecialMember] = useState(false);
   const [claimingMember, setClaimingMember] = useState(false);
   const [memberNotice, setMemberNotice] = useState('');
+  const [courseSummary, setCourseSummary] = useState<CourseProgressSummary | null>(null);
+  const [unlockBannerVisible, setUnlockBannerVisible] = useState(false);
 
   const skill = useMemo(() => {
     const found = SKILLS.find((s) => s.id === categoryId);
@@ -269,6 +280,7 @@ const CategoryPage: React.FC = () => {
   const feedbackStorageKey = `course-feedback-${skill?.id || 'unknown'}`;
   const memberStorageKey = `special-member-${skill?.id || 'unknown'}`;
   const currentTitle = currentSubPage?.title ?? 'Learning Section';
+  const skillId = skill?.id;
   const quickActivitiesSeed = [
     `2-minute recap: ${currentTitle} ka summary bolo.`,
     '3 key terms pick karo aur har term ka 1 practical example do.',
@@ -332,6 +344,72 @@ const CategoryPage: React.FC = () => {
       setIsSpecialMember(false);
     }
   }, [memberStorageKey]);
+
+  const refreshCourseSummary = useCallback(() => {
+    if (!skillId || subPages.length === 0) {
+      return;
+    }
+    const summary = getCourseSummary(skillId, subPages.length, currentPage);
+    setCourseSummary(summary);
+  }, [currentPage, skillId, subPages.length]);
+
+  useEffect(() => {
+    if (!skillId || subPages.length === 0) {
+      return;
+    }
+    markLessonCompleted(skillId, subPages.length, currentPage);
+    refreshCourseSummary();
+  }, [currentPage, refreshCourseSummary, skillId, subPages.length]);
+
+  useEffect(() => {
+    if (!skillId || subPages.length === 0 || activityChecks.length === 0) {
+      return;
+    }
+    const completed = activityChecks.every(Boolean);
+    markMiniChallengeCompleted(skillId, subPages.length, currentPage, completed);
+    refreshCourseSummary();
+  }, [activityChecks, currentPage, refreshCourseSummary, skillId, subPages.length]);
+
+  useEffect(() => {
+    if (!courseSummary?.completed || !skillId) {
+      return;
+    }
+
+    const bannerKey = `course-unlock-banner-shown-${skillId}`;
+    let shouldShowBanner = false;
+    try {
+      shouldShowBanner = localStorage.getItem(bannerKey) !== '1';
+      if (shouldShowBanner) {
+        localStorage.setItem(bannerKey, '1');
+      }
+    } catch {
+      shouldShowBanner = true;
+    }
+
+    if (shouldShowBanner) {
+      setUnlockBannerVisible(true);
+      void logUsageEvent('tool_action', {
+        toolId: `course-complete-${skillId}`,
+        action: 'unlock_secret_creator_lab',
+      });
+    }
+
+    if (user?.uid && firestoreDb) {
+      void setDoc(
+        doc(firestoreDb, 'users', user.uid),
+        {
+          courseCompletions: {
+            [skillId]: {
+              completed: true,
+              completedAt: serverTimestamp(),
+            },
+          },
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+    }
+  }, [courseSummary?.completed, skillId, user?.uid]);
 
   const handleNext = () => {
     if (subPages.length === 0) {
@@ -468,6 +546,7 @@ const CategoryPage: React.FC = () => {
     activityChecks.length > 0
       ? Math.round((activityChecks.filter(Boolean).length / activityChecks.length) * 100)
       : 0;
+  const pageStatus = courseSummary?.pageStatus;
 
   const chartStats = [
     { label: 'Concept Clarity', value: Math.min(98, 58 + currentPage * 6) },
@@ -518,6 +597,30 @@ const CategoryPage: React.FC = () => {
       explanation: 'Clear objective se speed, accuracy aur confidence teeno improve hote hain.',
     } as QuizBlockType);
 
+  const markQnaCompleteForPage = () => {
+    if (!skillId || subPages.length === 0) {
+      return;
+    }
+    markQnaAnswered(skillId, subPages.length, currentPage);
+    refreshCourseSummary();
+  };
+
+  const markPollCompleteForPage = () => {
+    if (!skillId || subPages.length === 0) {
+      return;
+    }
+    markPollVoted(skillId, subPages.length, currentPage);
+    refreshCourseSummary();
+  };
+
+  const markQuizCompleteForPage = () => {
+    if (!skillId || subPages.length === 0) {
+      return;
+    }
+    markQuizAttempted(skillId, subPages.length, currentPage);
+    refreshCourseSummary();
+  };
+
   const toggleActivity = (idx: number) => {
     setActivityChecks((prev) => prev.map((item, index) => (index === idx ? !item : item)));
   };
@@ -544,8 +647,8 @@ const CategoryPage: React.FC = () => {
   };
 
   const claimSpecialMember = async () => {
-    if (currentPage !== subPages.length - 1) {
-      setMemberNotice('Special member unlock ke liye course ka last page complete karo.');
+    if (!courseSummary?.completed) {
+      setMemberNotice('Special member unlock ke liye saare lessons + quiz + poll + Q&A + mini challenges complete karo.');
       return;
     }
 
@@ -697,16 +800,16 @@ const CategoryPage: React.FC = () => {
         );
         break;
       case 'quiz':
-        contentNode = <QuizBlock block={block as QuizBlockType} />;
+        contentNode = <QuizBlock block={block as QuizBlockType} onAttempt={markQuizCompleteForPage} />;
         break;
       case 'aiChallenge':
         contentNode = <AiChallengeBlock block={block as AiChallengeBlockType} />;
         break;
       case 'poll':
-        contentNode = <PollBlock block={block as PollBlockType} />;
+        contentNode = <PollBlock block={block as PollBlockType} onVote={markPollCompleteForPage} />;
         break;
       case 'qAndA':
-        contentNode = <QAndABlock block={block as QAndABlockType} />;
+        contentNode = <QAndABlock block={block as QAndABlockType} onAnswered={markQnaCompleteForPage} />;
         break;
       case 'expertSays':
         contentNode = <ExpertSaysBlock block={block as ExpertSaysBlockType} />;
@@ -790,6 +893,57 @@ const CategoryPage: React.FC = () => {
                   <p className="mt-2 text-sm font-semibold text-brand-text">
                     Is course ko end tak complete karoge to tumhe Special Member badge + Powerful Assets Pack unlock milega.
                   </p>
+                </div>
+              )}
+
+              <div className="mb-8 ios-card border border-brand-accent/20 p-4">
+                <p className="text-xs font-black uppercase tracking-widest text-brand-accent">Course Completion Tracker</p>
+                <div className="mt-3 grid gap-2 text-sm text-brand-text-secondary md:grid-cols-2">
+                  <p>Lessons complete: {courseSummary?.lessonCount || 0}/{subPages.length}</p>
+                  <p>Quiz attempted: {courseSummary?.quizCount || 0}/{subPages.length}</p>
+                  <p>Poll voted: {courseSummary?.pollCount || 0}/{subPages.length}</p>
+                  <p>Q&A answered: {courseSummary?.qnaCount || 0}/{subPages.length}</p>
+                  <p className="md:col-span-2">Mini challenges complete: {courseSummary?.miniChallengeCount || 0}/{subPages.length}</p>
+                </div>
+
+                {courseSummary?.completed ? (
+                  <div className="mt-4 rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-3">
+                    <p className="text-sm font-bold text-emerald-300">
+                      🎉 Congratulations!
+                      <br />
+                      Tumne ye course properly complete kiya hai.
+                      <br />
+                      Ab tumhare liye Secret Creator Lab unlock ho gaya hai.
+                    </p>
+                    <Link
+                      to="/secret-creator-lab"
+                      className="mt-3 inline-flex rounded-lg bg-brand-accent px-3 py-2 text-xs font-bold text-white"
+                    >
+                      Secret Creator Lab Open Karo
+                    </Link>
+                  </div>
+                ) : (
+                  <p className="mt-4 text-sm font-semibold text-brand-text">
+                    Secret Creator Lab abhi locked hai. Sab checkpoints complete karo.
+                  </p>
+                )}
+              </div>
+
+              {unlockBannerVisible && (
+                <div className="mb-8 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4">
+                  <p className="text-sm font-bold text-emerald-300">
+                    🎉 Congratulations!
+                    <br />
+                    Tumne ye course properly complete kiya hai.
+                    <br />
+                    Ab tumhare liye Secret Creator Lab unlock ho gaya hai.
+                  </p>
+                  <button
+                    onClick={() => setUnlockBannerVisible(false)}
+                    className="mt-3 rounded-lg bg-emerald-500 px-3 py-2 text-xs font-bold text-white"
+                  >
+                    Got It
+                  </button>
                 </div>
               )}
 
@@ -905,9 +1059,9 @@ const CategoryPage: React.FC = () => {
                     Quick Practice Zone
                   </p>
                   <div className="space-y-4">
-                    <QAndABlock block={quickQnA} />
-                    <PollBlock block={quickPoll} />
-                    <QuizBlock block={quickQuiz} />
+                    <QAndABlock block={quickQnA} onAnswered={markQnaCompleteForPage} answered={Boolean(pageStatus?.qnaDone)} />
+                    <PollBlock block={quickPoll} onVote={markPollCompleteForPage} />
+                    <QuizBlock block={quickQuiz} onAttempt={markQuizCompleteForPage} />
                   </div>
                 </div>
 

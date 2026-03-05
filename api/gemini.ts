@@ -105,7 +105,7 @@ export default async function handler(req: any, res: any) {
       const preferredLanguage = String(payload.preferredLanguage || 'English');
 
       const prompt = `
-Create a practical learning module for "${skillName}" for beginners.
+Create a highly engaging creator-style learning module for "${skillName}" for beginners.
 Preferred language: ${preferredLanguage}.
 
 Return STRICT JSON:
@@ -122,11 +122,24 @@ Return STRICT JSON:
 }
 
 Generate exactly 8 subPages.
-Each subPage should include practical step-by-step explanation.
-Keep each block concise (2-4 lines max) but meaningful.
-Every subPage must include at least one interactive block from: quiz, poll, qAndA, doAndDont, flashcard.
-Use mixed block types across the module: heading, paragraph, tip, template, benefits, infographic, funFact, quiz, poll, qAndA, doAndDont, flashcard.
-Make explanations actionable, engaging, beginner-friendly, and project-oriented.
+Tone and experience rules:
+- Write like a friendly creator mentor, not a textbook teacher.
+- Use short, fast paragraphs (1-3 lines feel).
+- Add curiosity and momentum so learner wants to continue scrolling.
+- Include creator phrases naturally where relevant: "socho zara", "hidden trick", "beginners ye mistake karte hain", "game change ho jayega".
+- Add dopamine blocks via content blocks: tips, fun facts, myth busters, quick actions.
+
+Lesson quality rules:
+- Each subPage must follow practical flow: hook, simple explanation, creator example, mini scenario, quick trick, mini challenge.
+- Keep every text concise but impactful (mostly 2-4 lines).
+- Every subPage must include at least one interactive block from: quiz, poll, qAndA, doAndDont, flashcard.
+- Use mixed block types across module: heading, paragraph, tip, template, benefits, infographic, funFact, quiz, poll, qAndA, doAndDont, flashcard.
+- Keep content beginner-friendly, project-oriented, and action-first.
+- Do not include markdown formatting or text outside JSON.
+
+Reward framing:
+- Add progress/reward tone in content so users feel completion unlock value.
+- Mention practical challenge or mini action in each subPage.
 Avoid extra text outside JSON.
 `;
 

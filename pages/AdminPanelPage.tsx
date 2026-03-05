@@ -114,10 +114,22 @@ const AdminPanelPage: React.FC = () => {
           <div className="max-h-[480px] space-y-3 overflow-y-auto pr-1">
             {users.map((u) => (
               <div key={u.id} className="rounded-xl bg-brand-primary/40 p-3">
+                {(() => {
+                  const completedCourses =
+                    u.courseCompletions && typeof u.courseCompletions === 'object'
+                      ? Object.values(u.courseCompletions).filter((item: any) => item?.completed === true).length
+                      : 0;
+
+                  return (
+                    <>
                 <p className="font-semibold text-brand-text">{u.email || 'unknown'}</p>
                 <p className="text-xs text-brand-text-secondary">UID: {u.uid || u.id}</p>
                 <p className="text-xs text-brand-text-secondary">Last Login: {formatDate(u.lastLoginAt)}</p>
+                <p className="text-xs text-brand-text-secondary">Completed Courses: {completedCourses}</p>
                 <p className="text-xs text-brand-text-secondary">{u.isAdmin ? 'Admin' : 'User'}</p>
+                    </>
+                  );
+                })()}
               </div>
             ))}
           </div>

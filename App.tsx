@@ -16,6 +16,7 @@ import RocketWriterPage from './pages/RocketWriterPage';
 import UniversalDownloaderPage from './pages/UniversalDownloaderPage';
 import ProToolsPage from './pages/ProToolsPage';
 import AdminPanelPage from './pages/AdminPanelPage';
+import SecretCreatorLabPage from './pages/SecretCreatorLabPage';
 import CinematicIntro from './components/CinematicIntro';
 import Loading from './components/Loading';
 import AuthGate from './components/AuthGate';
@@ -75,6 +76,7 @@ const AnimatedRoutes: React.FC = () => {
           <Route path="/rocket-writer" element={<RocketWriterPage />} />
           <Route path="/media-downloader" element={<UniversalDownloaderPage />} />
           <Route path="/tools/:toolId" element={<ProToolsPage />} />
+          <Route path="/secret-creator-lab" element={<SecretCreatorLabPage />} />
           <Route path="/admin" element={<AdminPanelPage />} />
         </Routes>
       </motion.div>

@@ -72,6 +72,15 @@ export const SKILLS: Skill[] = [
 
 export const TOOLS: Tool[] = [
   {
+    id: 'secret-creator-lab',
+    name: 'Secret Creator Lab',
+    description: 'Course complete karke level-based creator tools unlock karein.',
+    icon: BoltIcon,
+    color: 'from-fuchsia-500 to-cyan-500',
+    type: 'tool',
+    path: '/secret-creator-lab',
+  },
+  {
     id: 'qna-bot',
     name: 'AI Dost',
     description: 'Google Search se jude, up-to-date jawabat paayein.',

@@ -1,14 +1,18 @@
 
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { MAKER_PROFILE, SKILLS, TOOLS, WEBSITE_FAQ } from '../constants';
 import Card from '../components/SkillCard';
 import { Sparkles, Zap, BookOpen, UserCircle2, Mail, Globe, Instagram } from 'lucide-react';
 import { useLocale } from '../hooks/useLocale';
+import { getLevelProgress, isSecretCreatorLabUnlocked } from '../services/courseProgressService';
 
 const HomePage: React.FC = () => {
   const { t, localizeItem } = useLocale();
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+  const levelProgress = getLevelProgress();
+  const isLabUnlocked = isSecretCreatorLabUnlocked();
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -98,6 +102,28 @@ const HomePage: React.FC = () => {
             <Card key={tool.id} item={localizeItem(tool)} />
           ))}
         </motion.div>
+      </section>
+
+      <section className="space-y-6">
+        <div className="ios-card border border-brand-accent/20 p-6 md:p-8">
+          <p className="text-xs font-black uppercase tracking-widest text-brand-accent">Reward System</p>
+          <h2 className="mt-2 text-3xl font-black tracking-tight text-brand-text">Secret Creator Lab</h2>
+          <p className="mt-2 text-brand-text-secondary">
+            Course complete karo aur level-based premium creator tools unlock karo.
+          </p>
+
+          <div className="mt-4 grid gap-2 text-sm text-brand-text-secondary md:grid-cols-2">
+            <p>Completed courses: {levelProgress.completedCourses}</p>
+            <p>Current level: {levelProgress.currentLevel || 'Locked'}</p>
+          </div>
+
+          <Link
+            to="/secret-creator-lab"
+            className="mt-5 inline-flex rounded-xl bg-brand-accent px-4 py-2 text-sm font-bold text-white"
+          >
+            {isLabUnlocked ? 'Secret Creator Lab Open Karo' : 'Lab Unlock Progress Dekho'}
+          </Link>
+        </div>
       </section>
 
       <section className="space-y-8">

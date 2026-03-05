@@ -7,9 +7,10 @@ import { useLocale } from '../hooks/useLocale';
 
 interface QuizBlockProps {
   block: QuizBlockType;
+  onAttempt?: () => void;
 }
 
-const QuizBlock: React.FC<QuizBlockProps> = ({ block }) => {
+const QuizBlock: React.FC<QuizBlockProps> = ({ block, onAttempt }) => {
   const { t } = useLocale();
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
@@ -18,6 +19,7 @@ const QuizBlock: React.FC<QuizBlockProps> = ({ block }) => {
     if (isAnswered) return;
     setSelectedOption(index);
     setIsAnswered(true);
+    onAttempt?.();
   };
 
   const getOptionStyles = (index: number) => {

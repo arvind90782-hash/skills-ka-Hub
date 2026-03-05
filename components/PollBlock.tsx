@@ -7,9 +7,10 @@ import { useLocale } from '../hooks/useLocale';
 
 interface PollBlockProps {
   block: PollBlockType;
+  onVote?: () => void;
 }
 
-const PollBlock: React.FC<PollBlockProps> = ({ block }) => {
+const PollBlock: React.FC<PollBlockProps> = ({ block, onVote }) => {
   const { t } = useLocale();
   const [voted, setVoted] = useState(false);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
@@ -30,6 +31,7 @@ const PollBlock: React.FC<PollBlockProps> = ({ block }) => {
     if (voted) return;
     setSelectedOption(index);
     setVoted(true);
+    onVote?.();
   };
 
   return (
