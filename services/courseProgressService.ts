@@ -42,6 +42,17 @@ export type CourseProgressSummary = {
   };
 };
 
+export type ProgressChecklistSummary = {
+  totalCourses: number;
+  completedCourses: number;
+  totalLessons: number;
+  lessonCount: number;
+  quizCount: number;
+  pollCount: number;
+  qnaCount: number;
+  miniChallengeCount: number;
+};
+
 const STORAGE_KEY = 'course_progress_v1';
 const LEVELS: CreatorLevel[] = ['Beginner Creator', 'Smart Creator', 'Pro Creator', 'Elite Creator'];
 
@@ -203,6 +214,36 @@ export const getCourseSummary = (
 export const getCompletedCourseCount = (): number => {
   const store = readStore();
   return Object.values(store.courses).filter((entry) => isCourseCompleted(entry)).length;
+};
+
+export const getOverallProgressChecklist = (): ProgressChecklistSummary => {
+  const store = readStore();
+  return Object.values(store.courses).reduce(
+    (summary, entry) => {
+      const target = Math.max(1, entry.totalLessons || 1);
+      summary.totalCourses += 1;
+      summary.totalLessons += target;
+      summary.lessonCount += entry.lessonPages.length;
+      summary.quizCount += entry.quizPages.length;
+      summary.pollCount += entry.pollPages.length;
+      summary.qnaCount += entry.qnaPages.length;
+      summary.miniChallengeCount += entry.miniChallengePages.length;
+      if (isCourseCompleted(entry)) {
+        summary.completedCourses += 1;
+      }
+      return summary;
+    },
+    {
+      totalCourses: 0,
+      completedCourses: 0,
+      totalLessons: 0,
+      lessonCount: 0,
+      quizCount: 0,
+      pollCount: 0,
+      qnaCount: 0,
+      miniChallengeCount: 0,
+    }
+  );
 };
 
 export const isSecretCreatorLabUnlocked = (): boolean => getCompletedCourseCount() > 0;

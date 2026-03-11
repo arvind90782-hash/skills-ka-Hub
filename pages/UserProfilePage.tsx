@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ArrowLeft, 
-  User, 
-  Mail, 
-  Camera, 
-  Save, 
-  Award, 
-  Trophy, 
-  Star, 
+import {
+  ArrowLeft,
+  User,
+  Mail,
+  Camera,
+  Save,
+  Award,
+  Trophy,
+  Star,
   Zap,
   Target,
   Lock,
@@ -19,10 +19,21 @@ import {
   Gift,
   TrendingUp,
   Edit3,
-  X
+  X,
+  Sparkles,
+  ShieldCheck,
+  ChevronRight,
+  Crown,
+  AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
-import { getCreatorLevel, getLevelProgress, getCompletedCourseCount } from '../services/courseProgressService';
+import {
+  getCreatorLevel,
+  getLevelProgress,
+  getCompletedCourseCount,
+  isSecretCreatorLabUnlocked,
+  getOverallProgressChecklist
+} from '../services/courseProgressService';
 
 type UserProfile = {
   displayName: string;
@@ -65,6 +76,45 @@ const DEFAULT_BADGES = [
   { id: 'completionist', name: 'Completionist', description: 'Complete all courses', icon: <Trophy size={20} /> }
 ];
 
+const LEVEL_REWARD_SEQUENCE = [
+  { label: 'Beginner Creator', detail: 'Creator Motivation Tool + Content Idea Generator' },
+  { label: 'Smart Creator', detail: 'Skill Practice Generator + Boring Content Fixer' },
+  { label: 'Pro Creator', detail: 'Reel Idea Builder + Reel Script Maker' },
+  { label: 'Elite Creator', detail: 'Thumbnail Title Tester + Full Secret Lab Access' }
+];
+
+const ENGAGEMENT_PROMPTS = [
+  {
+    tag: '🔥 Quick Tip',
+    text: 'Socho zara... Poll aur Q&A ek hi session me complete karne se streak bana rahega aur secret lab unlock jaldi hoga.'
+  },
+  {
+    tag: '🤯 Mind Blowing Fact',
+    text: 'Ye trick 90% log nahi jaante: har quiz attempt ke baad turant ek short reflection note likhne se revision ke liye content ready ho jata hai.'
+  },
+  {
+    tag: '⚡ Pro Shortcut',
+    text: 'Thoda dhyan se samjho aur ek mini challenge me 60 second me result share karo – yeh micro-task se commitment build hota hai.'
+  },
+  {
+    tag: '🎯 Try This Right Now',
+    text: 'Open Video Editing path aur current page ka poll + quiz solve karo. Fir ek quick note likho: “Maine abhi kya apply kiya”.',
+    actionLabel: 'Open Video Editing',
+    actionLink: '/category/video-editing'
+  },
+  {
+    tag: '🧠 Creator Mindset Trick',
+    text: 'Agar tum yaha tak pahunch gaye ho to iska matlab tum normal learner nahi ho. Mini challenge ke baad victory pose imagine karo aur phir agle lesson me jump maro.'
+  }
+];
+
+const SECRET_REWARD_LIST = [
+  'CapCut reel hook presets aur template switches',
+  'Notion viral script frameworks + AI prompt library',
+  'Free premium LUT kits for cinematic reels',
+  'Creator automation workflow checklist (Zapier + shortcuts)'
+];
+
 const UserProfilePage: React.FC = () => {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
@@ -84,6 +134,21 @@ const UserProfilePage: React.FC = () => {
   const creatorLevel = getCreatorLevel();
   const levelProgress = getLevelProgress();
   const completedCourses = getCompletedCourseCount();
+  const labUnlocked = isSecretCreatorLabUnlocked();
+  const progressChecklist = getOverallProgressChecklist();
+  const requirementStats = [
+    { label: 'Lessons', current: progressChecklist.lessonCount, target: progressChecklist.totalLessons },
+    { label: 'Quizzes', current: progressChecklist.quizCount, target: progressChecklist.totalLessons },
+    { label: 'Polls', current: progressChecklist.pollCount, target: progressChecklist.totalLessons },
+    { label: 'Q&A', current: progressChecklist.qnaCount, target: progressChecklist.totalLessons },
+    { label: 'Mini Challenges', current: progressChecklist.miniChallengeCount, target: progressChecklist.totalLessons }
+  ];
+  const requirementsDone = requirementStats.every((item) => item.target > 0 && item.current >= item.target);
+  const labStatusText = labUnlocked ? 'Unlocked' : requirementsDone ? 'Almost ready' : 'Locked';
+  const levelRewards = LEVEL_REWARD_SEQUENCE.map((reward, index) => ({
+    ...reward,
+    unlocked: levelProgress.levelIndex >= index && levelProgress.levelIndex >= 0
+  }));
 
   useEffect(() => {
     const savedProfile = localStorage.getItem('user_profile');
@@ -381,6 +446,155 @@ const UserProfilePage: React.FC = () => {
           <Gift className="mx-auto mb-2 text-purple-400" size={24} />
           <p className="text-2xl font-black text-brand-text">{profile.interests.length}</p>
           <p className="text-xs font-semibold text-brand-text-secondary">Interests Selected</p>
+        </div>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="ios-card mt-6 border border-brand-accent/20 p-6 space-y-6"
+      >
+        <div className="grid gap-6 lg:grid-cols-[1.1fr,0.95fr]">
+          <div className="space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <Gift size={24} className="text-brand-accent" />
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.3em] text-brand-accent">Secret Creator Lab</p>
+                  <h3 className="text-2xl font-black text-brand-text">Unlock ke liye mission</h3>
+                </div>
+              </div>
+              <span
+                className={`rounded-full px-3 py-1 text-xs font-semibold uppercase ${
+                  labUnlocked
+                    ? 'bg-emerald-500/10 text-emerald-400'
+                    : requirementsDone
+                      ? 'bg-amber-500/10 text-amber-300'
+                      : 'bg-brand-primary/20 text-brand-text-secondary'
+                }`}
+              >
+                {labStatusText}
+              </span>
+            </div>
+            <p className="text-sm leading-relaxed text-brand-text-secondary">
+              Socho zara… quiz, poll, Q&A aur mini challenge ek hi rhythm me finish karte hi lab unlock ho jayega. Thoda dhyan se samjho kyunki ye powerful hai.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {requirementStats.map((req) => {
+                const percent = req.target ? Math.min(100, Math.round((req.current / req.target) * 100)) : 0;
+                const done = req.target > 0 && req.current >= req.target;
+                return (
+                  <div key={req.label} className="rounded-3xl border border-brand-text-secondary/10 bg-brand-primary/40 p-4">
+                    <div className="flex items-center justify-between text-sm font-semibold">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck size={16} className={`${done ? 'text-emerald-400' : 'text-brand-text-secondary'}`} />
+                        <span className="text-brand-text">{req.label}</span>
+                      </div>
+                      <span className="text-xs text-brand-text-secondary">
+                        {req.target > 0 ? `${req.current}/${req.target}` : '--/--'}
+                      </span>
+                    </div>
+                    <div className="mt-3 h-1.5 rounded-full bg-brand-primary/30">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${percent}%` }}
+                        transition={{ duration: 0.6, ease: 'easeOut' }}
+                        className={`h-full rounded-full ${done ? 'bg-emerald-400' : 'bg-brand-accent'}`}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div
+              className={`rounded-3xl border px-4 py-3 text-sm ${
+                labUnlocked
+                  ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100'
+                  : requirementsDone
+                    ? 'border-amber-400/40 bg-amber-500/10 text-amber-100'
+                    : 'border-brand-text-secondary/20 bg-brand-primary/40 text-brand-text-secondary'
+              }`}
+            >
+              <p className="font-semibold">
+                {labUnlocked
+                  ? '🎉 Congratulations! Tumne ye course properly complete kiya hai. Ab tumhare liye Secret Creator Lab unlock ho gaya hai.'
+                  : 'Quiz + Poll + Q&A + Mini challenges sab complete karo – agar tumne ye samajh liya to game change ho jayega.'}
+              </p>
+              <p className="mt-2 text-xs">
+                Abhi {labUnlocked ? 'secret lab ke doors khule hain' : 'thoda push aur chahiye'}. Secret reward ready hai.
+              </p>
+            </div>
+            <div className="rounded-3xl border border-brand-text-secondary/10 bg-brand-primary/40 p-3 text-sm">
+              <p className="text-[0.65rem] font-black uppercase tracking-[0.4em] text-brand-accent">Creator Level Meter</p>
+              <p className="mt-2 font-black text-brand-text">
+                {levelProgress.currentLevel || 'Locked'} • Remaining for next: {levelProgress.remainingForNext}
+              </p>
+              <p className="text-xs text-brand-text-secondary">
+                {levelProgress.nextLevel ? `Next: ${levelProgress.nextLevel}` : 'Max level reached'}
+              </p>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div className="grid gap-3">
+              {ENGAGEMENT_PROMPTS.map((prompt) => (
+                <div key={prompt.tag} className="rounded-3xl border border-brand-accent/15 bg-brand-primary/40 p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <Sparkles size={18} className="text-brand-accent" />
+                      <p className="text-[0.65rem] font-black uppercase tracking-[0.35em] text-brand-accent">{prompt.tag}</p>
+                    </div>
+                    {prompt.actionLink && (
+                      <Link to={prompt.actionLink} className="inline-flex items-center gap-1 text-xs font-bold text-brand-accent">
+                        {prompt.actionLabel}
+                        <ChevronRight size={14} />
+                      </Link>
+                    )}
+                  </div>
+                  <p className="mt-3 text-sm leading-relaxed text-brand-text">{prompt.text}</p>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-3xl border border-brand-accent/20 bg-brand-primary/40 p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Crown size={18} className="text-amber-400" />
+                <p className="text-xs font-black uppercase tracking-[0.3em] text-brand-accent">Secret Creator Level</p>
+              </div>
+              <p className="text-sm text-brand-text">
+                Agar tum yaha tak pahunch gaye ho to iska matlab tum normal learner nahi ho. Yaha kuch tools aur prompts milengi jo creators usually free me share nahi karte.
+              </p>
+              <ul className="space-y-1 text-xs text-brand-text-secondary">
+                {levelRewards.map((reward) => (
+                  <li key={reward.label} className="flex items-center justify-between">
+                    <span>{reward.label}</span>
+                    <span className={`text-[0.65rem] font-semibold uppercase ${reward.unlocked ? 'text-emerald-400' : 'text-brand-text-secondary'}`}>
+                      {reward.unlocked ? 'Unlocked' : 'Locked'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-3xl border border-brand-accent/20 bg-brand-primary/40 p-4">
+              <p className="text-xs font-black uppercase tracking-[0.3em] text-brand-accent">🎁 Secret Reward (Only for people who finished this lesson)</p>
+              <ul className="mt-3 space-y-1 text-sm text-brand-text-secondary">
+                {SECRET_REWARD_LIST.map((item) => (
+                  <li key={item}>• {item}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-3xl border border-brand-accent/30 bg-brand-primary/40 p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Sparkles size={18} className="text-brand-accent" />
+                <p className="text-sm font-black text-brand-text">🚀 Growth Hack</p>
+              </div>
+              <p className="text-sm leading-relaxed text-brand-text-secondary">
+                Agar tum next lesson se pehle poll + quiz mark karoge to engagement streak badge milta hai. Ek 10 minute reflection timer set karo aur phir agle lesson me jump maro.
+              </p>
+            </div>
+            <div className="rounded-3xl border border-amber-400/40 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-200 flex items-center gap-2">
+              <AlertTriangle size={16} />
+              ⚠ Next Lesson Warning — Agla lesson shayad sabse important hai kyunki usme ek aisi trick hai jo beginners ko pro bana deti hai.
+            </div>
+          </div>
         </div>
       </motion.div>
 
