@@ -109,7 +109,7 @@ const HomePage: React.FC = () => {
           <p className="text-xs font-black uppercase tracking-widest text-brand-accent">Reward System</p>
           <h2 className="mt-2 text-3xl font-black tracking-tight text-brand-text">Secret Creator Lab</h2>
           <p className="mt-2 text-brand-text-secondary">
-            Course complete karo aur level-based premium creator tools unlock karo.
+            Complete a course to unlock level-based premium creator tools.
           </p>
 
           <div className="mt-4 grid gap-2 text-sm text-brand-text-secondary md:grid-cols-2">
@@ -121,7 +121,7 @@ const HomePage: React.FC = () => {
             to="/secret-creator-lab"
             className="mt-5 inline-flex rounded-xl bg-brand-accent px-4 py-2 text-sm font-bold text-white"
           >
-            {isLabUnlocked ? 'Secret Creator Lab Open Karo' : 'Lab Unlock Progress Dekho'}
+            {isLabUnlocked ? 'Open Secret Creator Lab' : 'See Unlock Progress'}
           </Link>
         </div>
       </section>
@@ -131,9 +131,9 @@ const HomePage: React.FC = () => {
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-brand-accent">
               <UserCircle2 size={20} />
-              <span className="text-xs font-bold uppercase tracking-widest">Maker</span>
+              <span className="text-xs font-bold uppercase tracking-widest">Creator</span>
             </div>
-            <h2 className="text-3xl font-bold tracking-tight text-brand-text">Developer of this Website</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-brand-text">Creator of this Website</h2>
           </div>
         </div>
 

@@ -4,7 +4,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronLeft,
   ChevronRight,
-  ArrowLeft,
   Play,
   Pause,
   Loader2,
@@ -15,6 +14,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { SKILLS } from '../constants';
+import PageBackButton from '../components/PageBackButton';
 import type {
   GeneratedContent,
   ContentBlock,
@@ -75,25 +75,25 @@ type AssetResource = {
 const DEFAULT_GIFTS: GiftResource[] = [
   {
     title: 'Roadmap.sh',
-    description: 'Structured skill roadmaps jo learning ko fast and practical banate hain.',
+    description: 'Structured skill roadmaps that make learning fast and practical.',
     url: 'https://roadmap.sh/',
     tag: 'Learning Map',
   },
   {
     title: 'Excalidraw',
-    description: 'Ideas aur workflows ko quickly visualize karne ka super clean whiteboard tool.',
+    description: 'A clean whiteboard tool for quickly visualizing ideas and workflows.',
     url: 'https://excalidraw.com/',
     tag: 'Visual Thinking',
   },
   {
     title: 'Photopea',
-    description: 'Browser-based pro-level editor jo quick creative experiments ke liye perfect hai.',
+    description: 'A browser-based pro-level editor that is perfect for quick creative experiments.',
     url: 'https://www.photopea.com/',
     tag: 'Creative Tool',
   },
   {
     title: 'Regex101',
-    description: 'Text automation aur pattern understanding ke liye hidden gem.',
+    description: 'A hidden gem for text automation and pattern understanding.',
     url: 'https://regex101.com/',
     tag: 'Power Utility',
   },
@@ -102,37 +102,37 @@ const DEFAULT_GIFTS: GiftResource[] = [
 const SKILL_GIFT_MAP: Record<string, GiftResource> = {
   'graphic-design': {
     title: 'Coolors Palette Generator',
-    description: 'Professional color palette building ka fast tool jo design quality instantly improve karta hai.',
+    description: 'A fast tool for building professional color palettes that instantly improve design quality.',
     url: 'https://coolors.co/',
     tag: 'Design Gift',
   },
   'video-editing': {
     title: 'Shotdeck Style Frames',
-    description: 'Visual framing aur cinematic inspiration ke liye advanced reference library.',
+    description: 'An advanced reference library for visual framing and cinematic inspiration.',
     url: 'https://shotdeck.com/',
     tag: 'Video Gift',
   },
   'content-writing': {
     title: 'Hemingway Editor',
-    description: 'Writing clarity boost karne ka tool jo text ko readable aur sharp banata hai.',
+    description: 'A tool that improves writing clarity and makes text readable and sharp.',
     url: 'https://hemingwayapp.com/',
     tag: 'Writing Gift',
   },
   programming: {
     title: 'DevDocs',
-    description: 'Multiple docs ek jagah. Fast coding flow ke liye minimal docs engine.',
+    description: 'Multiple docs in one place. A minimal docs engine for a fast coding flow.',
     url: 'https://devdocs.io/',
     tag: 'Code Gift',
   },
   'digital-marketing': {
     title: 'AlsoAsked',
-    description: 'Real query tree se content strategy aur intent mapping improve hoti hai.',
+    description: 'Real query tree data helps improve content strategy and intent mapping.',
     url: 'https://alsoasked.com/',
     tag: 'Marketing Gift',
   },
   animation: {
     title: 'LottieFiles',
-    description: 'Micro-animations aur smooth UI motion assets ka trusted source.',
+    description: 'A trusted source for micro-animations and smooth UI motion assets.',
     url: 'https://lottiefiles.com/',
     tag: 'Animation Gift',
   },
@@ -282,10 +282,10 @@ const CategoryPage: React.FC = () => {
   const currentTitle = currentSubPage?.title ?? 'Learning Section';
   const skillId = skill?.id;
   const quickActivitiesSeed = [
-    `2-minute recap: ${currentTitle} ka summary bolo.`,
-    '3 key terms pick karo aur har term ka 1 practical example do.',
-    '1 mini output banao jo aaj hi kisi ko dikhaya ja sake.',
-    'Self review: 1 strength + 1 improvement point likho.',
+    `2-minute recap: summarize ${currentTitle}.`,
+    'Pick 3 key terms and give 1 practical example for each.',
+    'Create 1 mini output that you could show someone today.',
+    'Self review: write 1 strength and 1 improvement point.',
   ];
 
   useEffect(() => {
@@ -471,10 +471,9 @@ const CategoryPage: React.FC = () => {
     return (
       <div className="py-20 text-center">
         <h2 className="mb-4 text-3xl font-bold tracking-tight text-red-500">{t('category.skillNotFound')}</h2>
-        <Link to="/" className="ios-btn inline-flex items-center gap-2 bg-brand-accent text-white">
-          <ArrowLeft size={20} />
-          {t('category.backHome')}
-        </Link>
+        <div className="flex justify-center">
+          <PageBackButton label={t('category.backHome')} fallbackTo="/" />
+        </div>
       </div>
     );
   }
@@ -499,43 +498,43 @@ const CategoryPage: React.FC = () => {
     .map((text) => (text.length > 120 ? `${text.slice(0, 117)}...` : text));
 
   while (visualHighlights.length < 3) {
-    visualHighlights.push('Is section me step-by-step practice points milenge. Focus mode me padho aur apply karo.');
+    visualHighlights.push('This section includes step-by-step practice points. Read in focus mode and apply them.');
   }
 
   const practiceQuestions = [
-    `${currentSubPage.title} ka main goal 1 line me explain karo.`,
-    'Is page ka sabse practical step kaunsa hai jo tum aaj apply kar sakte ho?',
-    'Agar client ko ye topic samjhana ho, tum kaise explain karoge?',
+    `Explain the main goal of ${currentSubPage.title} in 1 line.`,
+    'Which practical step from this page can you apply today?',
+    'If you had to explain this topic to a client, how would you do it?',
   ];
 
   const whyBlock =
     currentSubPage.content.find((block) => block.type === 'benefits')?.type === 'benefits'
       ? (currentSubPage.content.find((block) => block.type === 'benefits') as { type: 'benefits'; text: string }).text
-      : 'Ye topic aapko real client problems solve karna sikhaata hai, isliye iski demand high rehti hai.';
+      : 'This topic teaches you how to solve real client problems, which is why it stays in demand.';
   const howBlock =
     currentSubPage.content.find((block) => block.type === 'template')?.type === 'template'
       ? (currentSubPage.content.find((block) => block.type === 'template') as { type: 'template'; text: string }).text
-      : 'Step-by-step plan follow karke, har step ko practical output me convert karo.';
+      : 'Follow a step-by-step plan and convert each step into a practical output.';
   const riskPoints =
     currentSubPage.content.find((block) => block.type === 'doAndDont')?.type === 'doAndDont'
       ? (currentSubPage.content.find((block) => block.type === 'doAndDont') as DoAndDontBlockType).donts
-      : ['Without practice learning stick nahi hoti', 'Random direction se time waste hota hai', 'No review means slow growth'];
+      : ['Without practice, learning does not stick', 'Random direction wastes time', 'No review means slow growth'];
 
   const deepDiveCards = [
     {
-      title: 'Kyun Zaroori Hai?',
+      title: 'Why Is It Important?',
       content: whyBlock,
     },
     {
-      title: 'Kaise Karein?',
+      title: 'How Do We Do It?',
       content: howBlock.split('\n').join(' '),
     },
     {
-      title: 'Kya Fayda Hoga?',
-      content: 'Aap faster projects complete karoge, better portfolio banega, aur client confidence boost hoga.',
+      title: 'What Are the Benefits?',
+      content: 'You will complete projects faster, build a stronger portfolio, and improve client confidence.',
     },
     {
-      title: 'Kya Nuksan Ho Sakta Hai?',
+      title: 'What Risks Should You Watch?',
       content: riskPoints.join(', '),
     },
   ];
@@ -560,11 +559,11 @@ const CategoryPage: React.FC = () => {
   const assetPack = ASSET_PACKS[skill.id] || ASSET_PACKS.programming;
 
   const stepFlow = [
-    `Step 1: ${currentSubPage.title} ka objective clear karo aur expected output likho.`,
-    `Step 2: Video section dekhkar kam se kam 3 practical notes likho.`,
-    `Step 3: Visual points me se 1 point choose karke mini task execute karo.`,
-    'Step 4: Quick Q&A, Poll aur Quiz solve karo for instant recall.',
-    'Step 5: Apna final output publish karo aur next page pe improve version banao.',
+    `Step 1: Clarify the objective of ${currentSubPage.title} and write the expected output.`,
+    'Step 2: Watch the video section and write at least 3 practical notes.',
+    'Step 3: Choose 1 visual point and execute the mini task.',
+    'Step 4: Solve the quick Q&A, poll, and quiz for instant recall.',
+    'Step 5: Publish your final output and create an improved version on the next page.',
   ];
 
   const existingQnA = currentSubPage.content.find((block) => block.type === 'qAndA') as QAndABlockType | undefined;
@@ -575,26 +574,26 @@ const CategoryPage: React.FC = () => {
     existingQnA ??
     ({
       type: 'qAndA',
-      question: `${currentSubPage.title} ka fastest starting point kya hai?`,
-      answer: visualHighlights[0] || 'Pehle objective clear karo, phir ek small action lekar start karo.',
+      question: `What is the fastest starting point for ${currentSubPage.title}?`,
+      answer: visualHighlights[0] || 'First clarify the objective, then start with one small action.',
     } as QAndABlockType);
 
   const quickPoll: PollBlockType =
     existingPoll ??
     ({
       type: 'poll',
-      question: 'Aapka preferred learning style kya hai?',
-      options: ['Pehle video phir practice', 'Pehle reading phir notes', 'Direct project build karke seekhna'],
+      question: 'What is your preferred learning style?',
+      options: ['Watch then practice', 'Read then take notes', 'Learn by building directly'],
     } as PollBlockType);
 
   const quickQuiz: QuizBlockType =
     existingQuiz ??
     ({
       type: 'quiz',
-      question: `${currentSubPage.title} me best first step kaunsa hai?`,
-      options: ['Objective clear karna', 'Random advanced tool se start karna', 'Bina plan practice skip karna'],
+      question: `What is the best first step for ${currentSubPage.title}?`,
+      options: ['Set a clear objective', 'Start with a random advanced tool', 'Skip practice without a plan'],
       correctAnswerIndex: 0,
-      explanation: 'Clear objective se speed, accuracy aur confidence teeno improve hote hain.',
+      explanation: 'A clear objective improves speed, accuracy, and confidence.',
     } as QuizBlockType);
 
   const markQnaCompleteForPage = () => {
@@ -648,7 +647,7 @@ const CategoryPage: React.FC = () => {
 
   const claimSpecialMember = async () => {
     if (!courseSummary?.completed) {
-      setMemberNotice('Special member unlock ke liye saare lessons + quiz + poll + Q&A + mini challenges complete karo.');
+      setMemberNotice('Complete all lessons, quizzes, polls, Q&A blocks, and mini challenges to unlock Special Member access.');
       return;
     }
 
@@ -670,13 +669,13 @@ const CategoryPage: React.FC = () => {
         );
       }
 
-      setMemberNotice('Special member unlock ho gaya. Congrats!');
+      setMemberNotice('Special Member access has been unlocked. Congratulations!');
       void logUsageEvent('tool_action', {
         toolId: `course-special-member-${skill.id}`,
         action: 'claim_member',
       });
     } catch {
-      setMemberNotice('Member unlock save nahi ho paaya. Dobara try karo.');
+      setMemberNotice('The Special Member unlock could not be saved. Please try again.');
     } finally {
       setClaimingMember(false);
     }
@@ -852,12 +851,7 @@ const CategoryPage: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-4xl pb-24 motion-smooth">
-      <Link to="/" className="group mb-8 inline-flex items-center gap-2 text-brand-text-secondary transition-colors hover:text-brand-accent">
-        <div className="rounded-full p-2 ios-glass transition-all group-hover:bg-brand-accent group-hover:text-white">
-          <ChevronLeft size={20} />
-        </div>
-        <span className="font-semibold">{t('common.backSkills')}</span>
-      </Link>
+      <PageBackButton label={t('common.backSkills')} fallbackTo="/tools" className="mb-8" />
 
       <div className="ios-card overflow-hidden">
         <div className="relative h-1.5 w-full overflow-hidden bg-brand-primary">
@@ -891,7 +885,7 @@ const CategoryPage: React.FC = () => {
                 <div className="mb-8 ios-card border border-emerald-400/30 bg-emerald-500/10 p-4">
                   <p className="text-xs font-black uppercase tracking-widest text-emerald-400">Course Rewards</p>
                   <p className="mt-2 text-sm font-semibold text-brand-text">
-                    Is course ko end tak complete karoge to tumhe Special Member badge + Powerful Assets Pack unlock milega.
+                    Complete this course to unlock the Special Member badge and the Powerful Assets Pack.
                   </p>
                 </div>
               )}
@@ -909,22 +903,22 @@ const CategoryPage: React.FC = () => {
                 {courseSummary?.completed ? (
                   <div className="mt-4 rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-3">
                     <p className="text-sm font-bold text-emerald-300">
-                      🎉 Congratulations!
+                      Congratulations!
                       <br />
-                      Tumne ye course properly complete kiya hai.
+                      You have completed this course properly.
                       <br />
-                      Ab tumhare liye Secret Creator Lab unlock ho gaya hai.
+                      Secret Creator Lab is now unlocked for you.
                     </p>
                     <Link
                       to="/secret-creator-lab"
                       className="mt-3 inline-flex rounded-lg bg-brand-accent px-3 py-2 text-xs font-bold text-white"
                     >
-                      Secret Creator Lab Open Karo
+                      Open Secret Creator Lab
                     </Link>
                   </div>
                 ) : (
                   <p className="mt-4 text-sm font-semibold text-brand-text">
-                    Secret Creator Lab abhi locked hai. Sab checkpoints complete karo.
+                    Secret Creator Lab is locked for now. Complete all checkpoints.
                   </p>
                 )}
               </div>
@@ -932,11 +926,11 @@ const CategoryPage: React.FC = () => {
               {unlockBannerVisible && (
                 <div className="mb-8 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4">
                   <p className="text-sm font-bold text-emerald-300">
-                    🎉 Congratulations!
+                    Congratulations!
                     <br />
-                    Tumne ye course properly complete kiya hai.
+                    You have completed this course properly.
                     <br />
-                    Ab tumhare liye Secret Creator Lab unlock ho gaya hai.
+                    Secret Creator Lab is now unlocked for you.
                   </p>
                   <button
                     onClick={() => setUnlockBannerVisible(false)}
@@ -1018,7 +1012,7 @@ const CategoryPage: React.FC = () => {
                       transition={{ repeat: Infinity, duration: 3.2 }}
                     />
                     <div className="relative z-10 space-y-3">
-                      {['Kaha se start hua', 'Kya challenge tha', 'Kaise solve hua', 'Kya result mila'].map((item, idx) => (
+                      {['How it started', 'What the challenge was', 'How it was solved', 'What result it delivered'].map((item, idx) => (
                         <motion.div
                           key={`${currentPage}-motion-${idx}`}
                           initial={{ x: -20, opacity: 0 }}
@@ -1032,14 +1026,14 @@ const CategoryPage: React.FC = () => {
                     </div>
                   </div>
                   <p className="mt-3 text-sm text-brand-text-secondary">
-                    Is motion explain block ko step flow ke saath padhkar aage practice zone complete karo. Ye section stock footage ke bina concept ko visual logic me todta hai.
+                    Read this motion explainer together with the step flow, then complete the practice zone. This section breaks the concept into visual logic without using stock footage.
                   </p>
                 </div>
 
                 <div className="ios-card border border-brand-accent/20 p-4">
                   <p className="mb-3 inline-flex items-center gap-2 text-xs font-black uppercase tracking-widest text-brand-accent">
                     <ListChecks size={14} />
-                    Kaha, Kya, Kaise, Kyun
+                    What, Why, How, and Result
                   </p>
                   <div className="grid gap-3">
                     {deepDiveCards.map((card, idx) => (
@@ -1071,7 +1065,7 @@ const CategoryPage: React.FC = () => {
                     Speed Check Questions
                   </p>
                   <p className="mb-4 text-sm text-brand-text-secondary">
-                    In 3 quick questions ka answer dimaag me ya notes me likho. Learning 10x fast hoti hai.
+                    Answer these 3 quick questions in your head or in your notes. Learning becomes much faster.
                   </p>
                   <div className="space-y-3">
                     {practiceQuestions.map((question, idx) => (
@@ -1115,7 +1109,7 @@ const CategoryPage: React.FC = () => {
                     Activity Board
                   </p>
                   <p className="mb-3 text-sm text-brand-text-secondary">
-                    In activities ko tick karo. Progress badhegi to retention bhi improve hoga.
+                    Tick these activities. As your progress increases, retention will improve too.
                   </p>
                   <div className="mb-3 h-2 overflow-hidden rounded-full bg-brand-primary/60">
                     <motion.div
@@ -1155,10 +1149,10 @@ const CategoryPage: React.FC = () => {
                   {!giftUnlocked ? (
                     <div className="rounded-xl border border-brand-text-secondary/10 bg-brand-primary/40 p-4">
                       <p className="text-sm font-semibold text-brand-text">
-                        Assets pack unlock karne ke liye last page tak complete karo.
+                        Complete the course through the last page to unlock the assets pack.
                       </p>
                       <p className="mt-2 text-sm text-brand-text-secondary">
-                        Last page pe special member claim + hidden high-value resources milenge.
+                        On the last page, you will unlock Special Member access and hidden high-value resources.
                       </p>
                     </div>
                   ) : (
@@ -1215,7 +1209,7 @@ const CategoryPage: React.FC = () => {
                     Feedback
                   </p>
                   <p className="mb-3 text-sm text-brand-text-secondary">
-                    Course quality improve karne ke liye quick feedback do.
+                    Share quick feedback to improve course quality.
                   </p>
                   <div className="mb-3 flex gap-2">
                     {[1, 2, 3, 4, 5].map((rate) => (
@@ -1234,7 +1228,7 @@ const CategoryPage: React.FC = () => {
                     value={feedbackText}
                     onChange={(e) => setFeedbackText(e.target.value)}
                     rows={4}
-                    placeholder="Aapko kya best laga, aur kya improve hona chahiye?"
+                    placeholder="What did you like most, and what should be improved?"
                     className="w-full rounded-xl border border-brand-text-secondary/20 bg-brand-primary/50 px-4 py-3 text-brand-text outline-none"
                   />
                   <button

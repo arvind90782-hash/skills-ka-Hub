@@ -12,11 +12,7 @@ type TranslationMap = Record<string, string>;
 
 const STORAGE_KEY = 'app_language';
 
-const LANGUAGE_OPTIONS: LanguageOption[] = [
-  { code: 'hinglish', label: 'Hinglish' },
-  { code: 'en', label: 'English' },
-  { code: 'hi', label: 'Hindi' },
-];
+const LANGUAGE_OPTIONS: LanguageOption[] = [{ code: 'en', label: 'English' }];
 
 const translations: Record<SupportedUiLanguage, TranslationMap> = {
   hinglish: {
@@ -592,12 +588,7 @@ interface LocaleContextType {
 
 const LocaleContext = createContext<LocaleContextType | undefined>(undefined);
 
-const getSupportedUiLanguage = (language: string): SupportedUiLanguage => {
-  if (language === 'hinglish' || language === 'en' || language === 'hi') {
-    return language;
-  }
-  return 'en';
-};
+const getSupportedUiLanguage = (_language: string): SupportedUiLanguage => 'en';
 
 const interpolate = (text: string, vars?: Record<string, string | number>) => {
   if (!vars) {
@@ -609,10 +600,10 @@ const interpolate = (text: string, vars?: Record<string, string | number>) => {
 export const LocaleProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<string>(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved && LANGUAGE_OPTIONS.some((l) => l.code === saved)) {
+    if (saved === 'en') {
       return saved;
     }
-    return 'hinglish';
+    return 'en';
   });
 
   useEffect(() => {
@@ -637,21 +628,11 @@ export const LocaleProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return interpolate(message, vars);
     };
 
-    const localizeItem = <T extends CardItem>(item: T): T => {
-      const localized = itemLocales[item.id]?.[uiLanguage] ?? itemLocales[item.id]?.en;
-      if (!localized) {
-        return item;
-      }
-      return {
-        ...item,
-        name: localized.name || item.name,
-        description: localized.description || item.description,
-      };
-    };
+    const localizeItem = <T extends CardItem>(item: T): T => item;
 
     return {
       language,
-      languageName: LANGUAGE_OPTIONS.find((l) => l.code === language)?.label ?? 'Hinglish',
+      languageName: 'English',
       languages: LANGUAGE_OPTIONS,
       setLanguage,
       t,

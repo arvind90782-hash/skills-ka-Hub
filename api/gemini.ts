@@ -129,7 +129,7 @@ Tone and experience rules:
 - Write like a friendly creator mentor, not a textbook teacher.
 - Use short, fast paragraphs (1-3 lines feel).
 - Add curiosity and momentum so learner wants to continue scrolling.
-- Include creator phrases naturally where relevant: "socho zara", "hidden trick", "beginners ye mistake karte hain", "game change ho jayega".
+- Keep the final output in ${preferredLanguage}.
 - Add dopamine blocks via content blocks: tips, fun facts, myth busters, quick actions.
 
 Lesson quality rules:
@@ -318,10 +318,11 @@ ${message}
       const pipelinePrompt = `You are the Smart Link Intelligence Engine inside Smart Link Hub.
 
 Your job is to convert raw internet links into structured knowledge.
+Preferred output language: ${languageHint}.
 
-Follow EXACT pipeline:
+Follow this exact pipeline:
 
-STEP 1 — CONTENT ACQUISITION
+STEP 1 - CONTENT ACQUISITION
 Title: ${metadata.title}
 Description: ${metadata.description}
 Text: ${metadata.text.substring(0, 2000)}...
@@ -329,7 +330,7 @@ URL: ${url}
 Note: ${note}
 Intent: ${intent}
 
-STEP 2 — CONTENT CLASSIFICATION
+STEP 2 - CONTENT CLASSIFICATION
 A. Content Type: [Video/Article/Blog/etc]
 B. Intent Category: [Educational/Entertainment/etc]
 C. Difficulty Level: [Beginner/Intermediate/Advanced]

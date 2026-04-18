@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, ArrowLeft, Bot, User, Search, Loader2, ExternalLink, Sparkles } from 'lucide-react';
 import { askQna, getFriendlyAiErrorMessage } from '../services/geminiService';
 import { useLocale } from '../hooks/useLocale';
 import { logUsageEvent } from '../services/analyticsService';
+import PageBackButton from '../components/PageBackButton';
 
 interface GroundingSource {
   uri: string;
@@ -91,15 +91,7 @@ const QnABotPage: React.FC = () => {
 
   return (
     <div className="mx-auto flex h-[calc(100vh-120px)] max-w-4xl flex-col">
-      <Link
-        to="/"
-        className="group mb-6 inline-flex items-center gap-2 text-brand-text-secondary transition-colors hover:text-brand-accent"
-      >
-        <div className="rounded-full p-2 ios-glass transition-all group-hover:bg-brand-accent group-hover:text-white">
-          <ArrowLeft size={18} />
-        </div>
-        <span className="font-semibold">{t('common.backTools')}</span>
-      </Link>
+      <PageBackButton label={t('common.backTools')} fallbackTo="/tools" className="mb-6" />
 
       <div className="relative flex flex-grow flex-col overflow-hidden ios-card">
         <div className="z-10 border-b border-brand-text-secondary/10 p-6 ios-glass">

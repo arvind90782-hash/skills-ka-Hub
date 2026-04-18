@@ -1,480 +1,364 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { 
-  ArrowLeft, 
-  Sparkles, 
-  Brain, 
-  Eye, 
-  Lightbulb, 
-  Film, 
+import {
+  Brain,
+  Eye,
+  Lightbulb,
+  Film,
   TrendingUp,
-  Zap,
+  Sparkles,
   Target,
-  RefreshCw,
   Copy,
   Check,
   MessageSquare,
-  Layout,
-  Palette,
-  Music,
-  Clock,
-  Users,
-  ThumbsUp,
-  Share2,
-  Play
+  Play,
 } from 'lucide-react';
 import { generateFastText } from '../services/geminiService';
-import { useLocale } from '../hooks/useLocale';
+import PageBackButton from '../components/PageBackButton';
 
 type ToolCategory = {
   id: string;
   name: string;
-  icon: React.ReactNode;
+  icon: React.ComponentType<{ size?: number }>;
   color: string;
   description: string;
 };
 
 const CATEGORIES: ToolCategory[] = [
-  { 
-    id: 'viral-video-brain', 
-    name: '🎬 Viral Video Brain', 
-    icon: <Brain size={24} />,
+  {
+    id: 'viral-video-brain',
+    name: 'Viral Video Brain',
+    icon: Brain,
     color: 'from-red-500 to-pink-500',
-    description: 'Idea dale → AI viral hook, script, title & thumbnail sab generate karega'
+    description: 'Generate a viral hook, full script, title ideas, thumbnail ideas, and retention tips.',
   },
-  { 
-    id: 'thumbnail-psychology', 
-    name: '🎯 Thumbnail Psychology', 
-    icon: <Eye size={24} />,
+  {
+    id: 'thumbnail-psychology',
+    name: 'Thumbnail Psychology',
+    icon: Eye,
     color: 'from-amber-500 to-orange-500',
-    description: 'Topic dale → AI best colors, emotional triggers & click psychology batayega'
+    description: 'Get the best colors, emotional triggers, click psychology, and layout ideas.',
   },
-  { 
-    id: 'creator-idea-engine', 
-    name: '💡 Creator Idea Engine', 
-    icon: <Lightbulb size={24} />,
+  {
+    id: 'creator-idea-engine',
+    name: 'Creator Idea Engine',
+    icon: Lightbulb,
     color: 'from-purple-500 to-pink-500',
-    description: 'Niche dale → AI 30 viral content ideas, hooks & captions generate karega'
+    description: 'Generate 30 viral content ideas, hooks, and captions for any niche.',
   },
-  { 
-    id: 'edit-planner', 
-    name: '🎥 Edit Planner AI', 
-    icon: <Film size={24} />,
+  {
+    id: 'edit-planner',
+    name: 'Edit Planner AI',
+    icon: Film,
     color: 'from-cyan-500 to-blue-500',
-    description: 'Raw idea dale → AI shot list, transitions, sounds & pacing suggest karega'
+    description: 'Plan shots, transitions, sound design, pacing, and editing style from a raw idea.',
   },
-  { 
-    id: 'viral-trend-scanner', 
-    name: '📈 Viral Trend Scanner', 
-    icon: <TrendingUp size={24} />,
+  {
+    id: 'viral-trend-scanner',
+    name: 'Viral Trend Scanner',
+    icon: TrendingUp,
     color: 'from-green-500 to-emerald-500',
-    description: 'AI trends analyze karega aur bataega kaunsa content abhi viral ho raha hai'
-  }
+    description: 'Analyze trends and discover what content is currently gaining traction.',
+  },
 ];
 
+const buildPrompt = (toolId: string, userInput: string): string => {
+  switch (toolId) {
+    case 'viral-video-brain':
+      return `You are a viral content strategist. User idea: "${userInput}"
+
+Provide a clean English output with no markdown:
+
+VIRAL HOOKS (2-3 options)
+- Hook lines that grab attention in the first 3 seconds
+
+FULL SCRIPT
+- A 60-second reel script
+- Intro (5 sec) -> Main Content (45 sec) -> CTA (10 sec)
+
+VIRAL TITLES (3 options)
+- YouTube/Instagram titles that create curiosity
+
+THUMBNAIL IDEAS
+- 3 thumbnail concepts with text overlays
+- A color scheme suggestion
+
+RETENTION TRICKS
+- 3 specific tricks to keep viewers engaged`;
+
+    case 'thumbnail-psychology':
+      return `You are a thumbnail psychology expert and CTR specialist. Topic: "${userInput}"
+
+Explain the following in English:
+
+BEST COLORS
+- Primary color palette
+- Secondary accent colors
+- Why these colors work for this topic
+
+EMOTIONAL TRIGGERS
+- Top 5 emotions to trigger
+- How to show them in the thumbnail
+
+CLICK PSYCHOLOGY
+- Why people click on thumbnails like this
+- Common mistakes to avoid
+
+LAYOUT IDEAS
+- 3 different layout compositions
+- Text placement suggestions
+- Face vs object placement
+
+SIZE & STYLE
+- Best aspect ratio
+- Text size recommendations`;
+
+    case 'creator-idea-engine':
+      return `You are a content growth expert. Niche: "${userInput}"
+
+Generate 30 viral content ideas in English:
+
+Use this format for each idea:
+Idea Number: [Hook/Caption/Format]
+
+Categories:
+- 10 trending format ideas
+- 10 evergreen content ideas
+- 10 quick short-form ideas
+
+Keep each idea to 1-2 lines max.`;
+
+    case 'edit-planner':
+      return `You are a professional video editor. Raw idea: "${userInput}"
+
+Explain the following in English:
+
+SHOT LIST
+- Detailed shot breakdown
+- Camera angles to use
+- Duration of each shot
+
+TRANSITIONS
+- Best transitions for this content
+- When to use each transition
+
+SOUND EFFECTS
+- SFX recommendations
+- Background music mood
+- Where to add sound effects
+
+PACING
+- Scene duration guide
+- Fast cuts vs slow cuts
+- Energy flow throughout
+
+EDITING STYLE
+- Suggested editing style
+- Color grading mood
+- Motion graphics needs`;
+
+    case 'viral-trend-scanner':
+      return `You are a social media trend analyst. Niche/topic: "${userInput}"
+
+Explain the following in English:
+
+CURRENTLY TRENDING
+- What type of content is viral right now
+- Growing formats in this niche
+- Rising topics
+
+FORMAT ANALYSIS
+- Which content formats are growing
+- Short-form vs long-form trends
+- Platform-specific trends
+
+SUCCESS PATTERNS
+- Common elements in viral content
+- What works vs what does not
+- Audience preferences
+
+OPPORTUNITIES
+- Untapped content angles
+- Unique angles to try
+- Gaps in the market
+
+PREDICTIONS
+- What is likely to trend next
+- Upcoming topics
+- Seasonal trends`;
+
+    default:
+      return `Topic: ${userInput}`;
+  }
+};
+
 const UltraToolsPage: React.FC = () => {
-  const { t } = useLocale();
   const [activeTool, setActiveTool] = useState<string | null>(null);
   const [input, setInput] = useState('');
   const [output, setOutput] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const buildPrompt = (toolId: string, userInput: string): string => {
-    switch (toolId) {
-      case 'viral-video-brain':
-        return `Tum ek viral content strategist ho. User ka idea: "${userInput}"
-        
-Hinglish output mein ye sab provide karo (clean format, no markdown):
-
-🎯 VIRAL HOOK (2-3 options)
-- Hook line jo first 3 seconds mein attention khiche
-
-📝 FULL SCRIPT
-- 60-second reel script
-- Intro (5 sec) → Main Content (45 sec) → CTA (10 sec)
-
-📌 VIRAL TITLE (3 options)
-- YouTube/Instagram title jo curiosity create kare
-
-🖼️ THUMBNAIL IDEAS
-- 3 thumbnail concepts with text overlays
-- Color scheme suggestion
-
-💡 RETENTION TRICKS
-- 3 specific tricks to keep viewers engaged
-
-No markdown, straight Hinglish text.`;
-
-      case 'thumbnail-psychology':
-        return `Tum ek thumbnail psychology expert aur CTR specialist ho. Topic: "${userInput}"
-
-Hinglish mein ye sab batao:
-
-🎨 BEST COLORS
-- Primary color palette
-- Secondary accent colors
-- Why these colors work for this topic
-
-😮 EMOTIONAL TRIGGERS
-- Top 5 emotions to trigger
-- How to show them in thumbnail
-
-👆 CLICK PSYCHOLOGY
-- Why people click on such thumbnails
-- Common mistakes to avoid
-
-🖼️ LAYOUT IDEAS
-- 3 different layout compositions
-- Text placement suggestions
-- Face vs object placement
-
-📏 SIZE & STYLE
-- Best aspect ratio
-- Text size recommendations
-
-No markdown, pure Hinglish.`;
-
-      case 'creator-idea-engine':
-        return `Tum ek content growth expert ho. Niche: "${userInput}"
-
-30 viral content ideas generate karo Hinglish mein:
-
-Har idea mein ye format:
-🎬 Idea Number: [Hook/Caption/Format]
-
-Categories:
-- 10 Trending format ideas
-- 10 Evergreen content ideas  
-- 10 Quick/short form ideas
-
-Har idea 1-2 lines max.
-No markdown, numbered list format.`;
-
-      case 'edit-planner':
-        return `Tum ek professional video editor ho. Raw idea: "${userInput}"
-
-Hinglish mein ye batao:
-
-🎬 SHOT LIST
-- Detailed shot breakdown
-- Camera angles to use
-- Duration of each shot
-
-🔄 TRANSITIONS
-- Best transitions for this content
-- When to use each transition
-
-🔊 SOUND EFFECTS
-- SFX recommendations
-- Background music mood
-- Where to add sound effects
-
-⚡ PACING
-- Scene duration guide
-- Fast cuts vs slow cuts
-- Energy flow throughout
-
-🎯 EDITING STYLE
-- Suggested editing style
-- Color grading mood
-- Motion graphics needs
-
-No markdown, clean structured format.`;
-
-      case 'viral-trend-scanner':
-        return `Tum ek social media trend analyst ho. Niche/Topic: "${userInput}"
-
-Hinglish mein ye batao:
-
-🔥 CURRENTLY TRENDING
-- What type of content is viral right now
-- Growing formats in this niche
-- Rising topics
-
-📊 FORMAT ANALYSIS
-- Which content formats are growing
-- Short-form vs long-form trends
-- Platform-specific trends
-
-🎯 SUCCESS PATTERNS
-- Common elements in viral content
-- What works vs what doesn't
-- Audience preferences
-
-💡 OPPORTUNITIES
-- Untapped content angles
-- Unique angles to try
-- Gap in the market
-
-🔮 PREDICTIONS
-- What's likely to trend next
-- Upcoming topics
-- Seasonal trends
-
-No markdown, detailed Hinglish report.`;
-
-      default:
-        return `Topic: ${userInput}`;
-    }
-  };
+  const activeCategory = CATEGORIES.find((category) => category.id === activeTool) || CATEGORIES[0];
 
   const generateOutput = async () => {
-    if (!input.trim() || !activeTool) return;
-    
+    if (!activeTool || !input.trim()) {
+      return;
+    }
+
     setLoading(true);
     setOutput(null);
-    
+
     try {
-      const prompt = buildPrompt(activeTool, input);
+      const prompt = buildPrompt(activeTool, input.trim());
       const stream = await generateFastText(prompt);
       let result = '';
-      
+
       for await (const chunk of stream as AsyncIterable<{ text?: string }>) {
         if (chunk?.text) {
           result += chunk.text;
         }
       }
-      
+
       setOutput(result.trim());
     } catch (error) {
       console.error('Generation error:', error);
-      setOutput('Error generating output. Please try again.');
+      setOutput('There was a problem generating the output. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const copyOutput = () => {
-    if (output) {
-      navigator.clipboard.writeText(output);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+  const copyOutput = async () => {
+    if (!output) {
+      return;
     }
+
+    await navigator.clipboard.writeText(output);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1800);
   };
 
-  const activeCategory = CATEGORIES.find(c => c.id === activeTool);
-
   return (
-    <div className="mx-auto max-w-5xl pb-24">
-      <Link to="/" className="group mb-8 inline-flex items-center gap-2 text-brand-text-secondary transition-colors hover:text-brand-accent">
-        <div className="rounded-full p-2 ios-glass transition-all group-hover:bg-brand-accent group-hover:text-white">
-          <ArrowLeft size={20} />
-        </div>
-        <span className="font-semibold">Back to Home</span>
-      </Link>
+    <div className="mx-auto max-w-5xl space-y-8 pb-24">
+      <PageBackButton label="Back" fallbackTo="/tools" />
 
-      {/* Header */}
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
+      <motion.section
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="ios-card border border-brand-accent/20 p-8"
+        className="ios-card overflow-hidden border border-brand-accent/20 p-6 md:p-8"
       >
-        <div className="flex items-center gap-3">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-brand-accent to-purple-500 shadow-lg shadow-brand-accent/30">
-            <Brain className="text-white" size={28} />
+        <div className="space-y-3">
+          <div className="inline-flex items-center gap-2 rounded-full border border-brand-accent/20 bg-brand-accent/10 px-3 py-1 text-xs font-black uppercase tracking-[0.35em] text-brand-accent">
+            <Sparkles size={12} />
+            Ultra Tools
           </div>
-          <div>
-            <p className="text-xs font-black uppercase tracking-widest text-brand-accent">✨ Ultra Rare Tools</p>
-            <h1 className="text-3xl font-black tracking-tight text-brand-text">AI-Powered Creator Suite</h1>
-          </div>
+          <h1 className="max-w-3xl text-4xl font-black tracking-tight text-brand-text md:text-6xl">
+            Advanced brainstorming tools for creators.
+          </h1>
+          <p className="max-w-3xl text-base leading-relaxed text-brand-text-secondary md:text-lg">
+            Pick a category, enter your idea, and get a structured AI response you can use immediately.
+          </p>
         </div>
-        <p className="mt-4 text-brand-text-secondary">
-          Ye powerful tools Gemini AI se powered hain. Bas input do aur magic dekho! 🎩
-          <br />
-          <span className="text-sm">Perfect for creators, editors aur developers jo instant results chahte hain.</span>
-        </p>
-      </motion.div>
+      </motion.section>
 
-      {/* Tool Categories */}
-      {!activeTool ? (
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="mt-6 grid gap-4 md:grid-cols-2"
-        >
-          {CATEGORIES.map((category, idx) => (
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        {CATEGORIES.map((category, index) => {
+          const Icon = category.icon;
+          const selected = category.id === activeTool;
+
+          return (
             <motion.button
               key={category.id}
-              initial={{ opacity: 0, y: 20 }}
+              type="button"
+              initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 + idx * 0.1 }}
-              onClick={() => {
-                setActiveTool(category.id);
-                setInput('');
-                setOutput(null);
-              }}
-              className="ios-card group border border-brand-accent/15 p-6 text-left transition-all hover:border-brand-accent/40 hover:shadow-lg"
+              transition={{ delay: index * 0.05 }}
+              onClick={() => setActiveTool(category.id)}
+              className={`rounded-3xl border p-4 text-left transition ${
+                selected
+                  ? 'border-brand-accent/50 bg-brand-accent/10 shadow-lg shadow-brand-accent/10'
+                  : 'border-brand-text-secondary/10 bg-brand-primary/40 hover:border-brand-accent/30'
+              }`}
             >
-              <div className="flex items-start gap-4">
-                <div className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${category.color} shadow-lg`}>
-                  <div className="text-white">{category.icon}</div>
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-black text-brand-text group-hover:text-brand-accent transition-colors">
-                    {category.name}
-                  </h3>
-                  <p className="mt-2 text-sm text-brand-text-secondary">
-                    {category.description}
-                  </p>
-                </div>
-                <Sparkles className="text-brand-accent opacity-0 transition-opacity group-hover:opacity-100" size={20} />
+              <div className={`mb-4 inline-flex rounded-2xl bg-gradient-to-br ${category.color} p-3 text-white`}>
+                <Icon size={24} />
               </div>
+              <h2 className="text-lg font-black text-brand-text">{category.name}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-brand-text-secondary">{category.description}</p>
             </motion.button>
-          ))}
-        </motion.div>
-      ) : (
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="mt-6"
-        >
-          {/* Back Button */}
+          );
+        })}
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="ios-card space-y-5 p-6 md:p-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-accent/10 text-brand-accent">
+              <Target size={22} />
+            </div>
+            <div>
+              <h2 className="text-2xl font-black text-brand-text">{activeCategory.name}</h2>
+              <p className="text-sm text-brand-text-secondary">{activeCategory.description}</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <label className="block text-sm font-semibold text-brand-text-secondary">Your idea or topic</label>
+            <textarea
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              rows={6}
+              placeholder="Describe your idea, topic, niche, or edit goal..."
+              className="w-full rounded-2xl border border-brand-text-secondary/20 bg-brand-primary/50 p-4 text-brand-text outline-none transition focus:border-brand-accent/40"
+            />
+          </div>
+
           <button
-            onClick={() => {
-              setActiveTool(null);
-              setInput('');
-              setOutput(null);
-            }}
-            className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-brand-accent hover:underline"
+            type="button"
+            onClick={() => void generateOutput()}
+            disabled={loading || !activeTool || !input.trim()}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-brand-accent px-5 py-3 font-bold text-white transition hover:bg-brand-accent-light disabled:cursor-not-allowed disabled:opacity-50"
           >
-            ← All Tools
+            {loading ? <Play size={18} className="animate-pulse" /> : <Sparkles size={18} />}
+            {loading ? 'Generating...' : 'Generate'}
           </button>
+        </div>
 
-          {/* Active Tool Card */}
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="ios-card border border-brand-accent/20 p-6 md:p-8"
-          >
-            {/* Tool Header */}
-            <div className="flex items-center gap-4">
-              <div className={`flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${activeCategory?.color} shadow-lg`}>
-                <div className="text-white">{activeCategory?.icon}</div>
-              </div>
-              <div>
-                <h2 className="text-2xl font-black text-brand-text">{activeCategory?.name}</h2>
-                <p className="text-brand-text-secondary">{activeCategory?.description}</p>
-              </div>
-            </div>
-
-            {/* Input Area */}
-            <div className="mt-6">
-              <label className="mb-2 block text-sm font-semibold text-brand-text">
-                {activeTool === 'viral-video-brain' && '🎬 Apna Idea/Topic Likho'}
-                {activeTool === 'thumbnail-psychology' && '🎯 Thumbnail Topic/Title Likho'}
-                {activeTool === 'creator-idea-engine' && '💡 Apna Niche Likho'}
-                {activeTool === 'edit-planner' && '🎥 Video Concept/Idea Likho'}
-                {activeTool === 'viral-trend-scanner' && '📈 Niche/Topic Likho jisme trend check karna hai'}
-              </label>
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={
-                  activeTool === 'viral-video-brain' ? 'Example: How to edit videos like pro, or 5 tips for better thumbnails...' :
-                  activeTool === 'thumbnail-psychology' ? 'Example: Gaming video thumbnail, or Tech review...' :
-                  activeTool === 'creator-idea-engine' ? 'Example: Coding tutorials, Food reviews, Travel vlogs...' :
-                  activeTool === 'edit-planner' ? 'Example: A travel vlog about mountain trekking, or cooking tutorial...' :
-                  'Example: Tech reviews, Fashion, Fitness...'
-                }
-                rows={4}
-                className="w-full rounded-xl border border-brand-text-secondary/20 bg-brand-primary/50 px-4 py-3 text-brand-text outline-none focus:border-brand-accent/40"
-              />
-            </div>
-
-            {/* Generate Button */}
-            <button
-              onClick={generateOutput}
-              disabled={loading || !input.trim()}
-              className="mt-4 inline-flex items-center gap-2 rounded-xl bg-brand-accent px-6 py-3 text-sm font-bold text-white disabled:opacity-60 hover:bg-brand-accent/80 transition-all"
-            >
-              {loading ? (
-                <>
-                  <RefreshCw size={18} className="animate-spin" />
-                  Generating Magic... ✨
-                </>
-              ) : (
-                <>
-                  <Zap size={18} />
-                  Generate Output
-                </>
-              )}
-            </button>
-
-            {/* Output */}
-            {output && (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mt-6"
+        <div className="ios-card space-y-4 p-6 md:p-8">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-black text-brand-text">Result</h2>
+            {output ? (
+              <button
+                type="button"
+                onClick={() => void copyOutput()}
+                className="inline-flex items-center gap-2 rounded-full border border-brand-text-secondary/20 px-3 py-2 text-sm font-semibold text-brand-text-secondary transition hover:text-brand-text"
               >
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-bold text-brand-text flex items-center gap-2">
-                    <Sparkles size={18} className="text-brand-accent" />
-                    Output
-                  </h3>
-                  <button
-                    onClick={copyOutput}
-                    className="inline-flex items-center gap-1 rounded-lg border border-brand-text-secondary/20 bg-brand-primary/50 px-3 py-1 text-xs font-semibold text-brand-text transition-colors hover:bg-brand-accent/10"
-                  >
-                    {copied ? <Check size={14} /> : <Copy size={14} />}
-                    {copied ? 'Copied!' : 'Copy'}
-                  </button>
-                </div>
-                <div className="rounded-xl border border-brand-accent/20 bg-brand-primary/30 p-4 md:p-6">
-                  <pre className="whitespace-pre-wrap text-sm leading-relaxed text-brand-text font-sans">
-                    {output}
-                  </pre>
-                </div>
-              </motion.div>
-            )}
-          </motion.div>
-        </motion.div>
-      )}
+                {copied ? <Check size={16} /> : <Copy size={16} />}
+                {copied ? 'Copied' : 'Copy'}
+              </button>
+            ) : null}
+          </div>
 
-      {/* Features Showcase */}
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="mt-8 ios-card border border-brand-text-secondary/10 p-6"
-      >
-        <h3 className="text-lg font-black text-brand-text mb-4">🚀 Why These Tools Are Addictive</h3>
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="flex items-start gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-accent/10 text-brand-accent">
-              <Brain size={16} />
-            </div>
-            <div>
-              <p className="font-bold text-brand-text">Gemini AI Powered</p>
-              <p className="text-xs text-brand-text-secondary">Advanced AI for best results</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-purple-500/10 text-purple-400">
-              <Zap size={16} />
-            </div>
-            <div>
-              <p className="font-bold text-brand-text">Instant Results</p>
-              <p className="text-xs text-brand-text-secondary">No waiting, get output in seconds</p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-400">
-              <Target size={16} />
-            </div>
-            <div>
-              <p className="font-bold text-brand-text">Creator Focused</p>
-              <p className="text-xs text-brand-text-secondary">Made for editors & creators</p>
-            </div>
+          <div className="min-h-[360px] rounded-2xl border border-brand-text-secondary/10 bg-brand-primary/40 p-4">
+            {loading && !output ? (
+              <div className="flex h-full min-h-[320px] items-center justify-center text-brand-text-secondary">
+                Generating a structured response...
+              </div>
+            ) : output ? (
+              <pre className="whitespace-pre-wrap break-words text-sm leading-relaxed text-brand-text">{output}</pre>
+            ) : (
+              <div className="flex h-full min-h-[320px] flex-col items-center justify-center text-center text-brand-text-secondary">
+                <MessageSquare size={28} className="mb-3 text-brand-accent" />
+                <p className="font-semibold text-brand-text">Choose a tool, enter your idea, and generate the output.</p>
+                <p className="mt-2 text-sm">Your result will appear here.</p>
+              </div>
+            )}
           </div>
         </div>
-      </motion.div>
+      </section>
     </div>
   );
 };
 
 export default UltraToolsPage;
-

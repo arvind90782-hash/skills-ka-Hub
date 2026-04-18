@@ -48,24 +48,24 @@ const getAuthErrorMessage = (error: unknown, fallback: string): string => {
 
   switch (code) {
     case 'auth/invalid-email':
-      return 'Email format sahi nahi hai.';
+      return 'The email format is invalid.';
     case 'auth/user-not-found':
     case 'auth/invalid-credential':
-      return 'Is email/password se account nahi mila.';
+      return 'No account was found for that email and password.';
     case 'auth/wrong-password':
-      return 'Password galat hai.';
+      return 'The password is incorrect.';
     case 'auth/email-already-in-use':
-      return 'Is email se account already bana hua hai.';
+      return 'An account already exists with that email.';
     case 'auth/weak-password':
-      return 'Password weak hai. Thoda strong password use karo.';
+      return 'The password is too weak. Please choose a stronger one.';
     case 'auth/popup-closed-by-user':
-      return 'Google popup close ho gaya. Dobara try karo.';
+      return 'The Google sign-in popup was closed. Please try again.';
     case 'auth/popup-blocked':
-      return 'Popup block ho gaya. Browser me popups allow karo.';
+      return 'The popup was blocked. Please allow popups in your browser.';
     case 'auth/operation-not-allowed':
-      return 'Google login abhi Firebase me enabled nahi hai.';
+      return 'Google sign-in is not enabled in Firebase yet.';
     case 'auth/too-many-requests':
-      return 'Bahut zyada attempts ho gaye. Thodi der baad try karo.';
+      return 'Too many attempts were made. Please try again later.';
     default:
       return fallback;
   }
@@ -132,7 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await upsertUserProfile(cred.user, true);
       await logAuthEvent('signup', { targetEmail: email.toLowerCase(), method: 'password' });
     } catch (error) {
-      throw new Error(getAuthErrorMessage(error, 'Signup fail ho gaya.'));
+      throw new Error(getAuthErrorMessage(error, 'Sign up failed.'));
     }
   };
 
@@ -147,7 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await upsertUserProfile(cred.user, false);
       await logAuthEvent('login', { targetEmail: email.toLowerCase(), method: 'password' });
     } catch (error) {
-      throw new Error(getAuthErrorMessage(error, 'Login fail ho gaya.'));
+      throw new Error(getAuthErrorMessage(error, 'Login failed.'));
     }
   };
 
@@ -167,7 +167,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         method: 'google',
       });
     } catch (error) {
-      throw new Error(getAuthErrorMessage(error, 'Google login fail ho gaya.'));
+      throw new Error(getAuthErrorMessage(error, 'Google login failed.'));
     }
   };
 
@@ -179,7 +179,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await sendPasswordResetEmail(firebaseAuth, email);
     } catch (error) {
-      throw new Error(getAuthErrorMessage(error, 'Password reset email bhejne me issue aaya.'));
+      throw new Error(getAuthErrorMessage(error, 'There was a problem sending the password reset email.'));
     }
   };
 

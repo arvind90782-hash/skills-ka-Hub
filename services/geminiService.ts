@@ -135,7 +135,7 @@ export const getFriendlyAiErrorMessage = (error: unknown, fallbackMessage: strin
   const normalized = raw.toLowerCase();
 
   if (normalized.includes('server api key missing') || normalized.includes('api key set nahi')) {
-    return 'Server API key missing hai. Vercel me GEMINI_API_KEY set karke redeploy karo.';
+    return 'The server API key is missing. Set `GEMINI_API_KEY` in Vercel and redeploy.';
   }
 
   if (
@@ -145,11 +145,11 @@ export const getFriendlyAiErrorMessage = (error: unknown, fallbackMessage: strin
     normalized.includes('rate limit') ||
     normalized.includes('too many requests')
   ) {
-    return 'Aaj ka Gemini quota/rate-limit exceed ho gaya hai. Thodi der baad try karo ya billing/plan check karo.';
+    return 'The Gemini quota or rate limit has been exceeded. Please try again later or check your billing plan.';
   }
 
   if (isModelNotFoundError(error)) {
-    return 'Selected AI model ab available nahi hai. Stable model fallback try ho raha hai. Page refresh karke phir try karo.';
+    return 'The selected AI model is no longer available. A stable fallback is being used. Please refresh and try again.';
   }
 
   if (
@@ -157,7 +157,7 @@ export const getFriendlyAiErrorMessage = (error: unknown, fallbackMessage: strin
     normalized.includes('unauthenticated') ||
     normalized.includes('invalid api key')
   ) {
-    return 'Server-side API key invalid ya unauthorized hai. Dashboard me key check karo.';
+    return 'The server-side API key is invalid or unauthorized. Please verify it in the dashboard.';
   }
 
   if (
@@ -166,7 +166,7 @@ export const getFriendlyAiErrorMessage = (error: unknown, fallbackMessage: strin
     normalized.includes('network error') ||
     normalized.includes('fetch failed')
   ) {
-    return 'Network issue aa gaya. Internet check karo aur phir try karo.';
+    return 'A network issue occurred. Check your internet connection and try again.';
   }
 
   if (raw.includes('{"error"') || raw.length > 300) {
@@ -178,111 +178,111 @@ export const getFriendlyAiErrorMessage = (error: unknown, fallbackMessage: strin
 
 const FALLBACK_BLOCK: ContentBlock = {
   type: 'paragraph',
-  text: 'Is page ka content thoda unstable tha. Next/previous par tap karke continue karein.',
+  text: 'This page content was unstable. Tap Next or Previous to continue.',
 };
 
 const buildLocalCourseFallback = (skillName: string): GeneratedContent => ({
   skillName,
   subPages: [
     {
-      title: `${skillName} Ka Starter Roadmap`,
-      imageSuggestion: `${skillName} learning roadmap with laptop and notes`,
+      title: `${skillName} Starter Roadmap`,
+      imageSuggestion: `${skillName} learning roadmap with a laptop and notes`,
       motionStoryboard: 'Roadmap cards one-by-one slide in with glow.',
       content: [
-        { type: 'heading', text: `${skillName} shuru kaise karein` },
+        { type: 'heading', text: `How to start ${skillName}` },
         {
           type: 'paragraph',
-          text: `Aaj se aap ${skillName} ka practical safar start kar rahe ho. Daily 45-60 min focused practice rakho.`,
+          text: `Today you are starting a practical ${skillName} journey. Keep a daily 45-60 minute focused practice block.`,
         },
-        { type: 'tip', text: 'Random tutorials dekhne ke bajaye ek fixed 30-day plan follow karo.' },
+        { type: 'tip', text: 'Follow one fixed 30-day plan instead of jumping between random tutorials.' },
         {
           type: 'doAndDont',
-          dos: ['Roz practice karo', 'Notes banao', 'Mini project publish karo'],
-          donts: ['Sirf dekhte mat raho', 'Perfect hone ka wait mat karo'],
+          dos: ['Practice every day', 'Take notes', 'Publish a mini project'],
+          donts: ['Do not only watch', 'Do not wait to be perfect'],
         },
-        { type: 'benefits', text: 'Consistency se 4-6 hafton me visible progress milti hai aur confidence grow hota hai.' },
+        { type: 'benefits', text: 'Consistency creates visible progress in 4-6 weeks and builds confidence.' },
       ],
     },
     {
-      title: `Beginner Problems & Fixes`,
+      title: 'Beginner Problems & Fixes',
       imageSuggestion: `Student solving common ${skillName} beginner issues`,
       motionStoryboard: 'Problem icons shake, then solution ticks appear.',
       content: [
-        { type: 'heading', text: 'Common mistakes jo beginners karte hain' },
+        { type: 'heading', text: 'Common mistakes beginners make' },
         {
           type: 'qAndA',
-          question: 'Mujhe samajh aa jata hai, par khud se nahi ban pata. Kya karu?',
-          answer: 'Tutorial complete karne ke baad bina video dekhe same cheez dobara banao.',
+          question: 'I understand it while watching, but I cannot build it myself. What should I do?',
+          answer: 'After finishing a tutorial, rebuild the same thing once without watching the video.',
         },
         {
           type: 'mythBuster',
-          myth: `${skillName} sirf talented log kar sakte hain.`,
-          reality: 'Talent se zyada system aur repetition kaam karta hai.',
+          myth: `Only naturally talented people can learn ${skillName}.`,
+          reality: 'System and repetition matter more than raw talent.',
         },
         {
           type: 'poll',
-          question: 'Aapka sabse bada blocker kya hai?',
+          question: 'What is your biggest blocker?',
           options: ['Time management', 'Practice consistency', 'Client confidence', 'Tool confusion'],
         },
         {
           type: 'funFact',
-          text: 'Top freelancers ka first portfolio piece aksar average hota hai, lekin woh publish zaroor karte hain.',
+          text: 'The first portfolio piece from top freelancers is often average, but they still publish it.',
         },
       ],
     },
     {
-      title: `Tools, Templates & Speed`,
+      title: 'Tools, Templates & Speed',
       imageSuggestion: `${skillName} tool stack and reusable templates`,
       motionStoryboard: 'Tool badges pop in and template card flips.',
       content: [
-        { type: 'heading', text: 'Fast workflow ke liye tool setup' },
+        { type: 'heading', text: 'Set up tools for a faster workflow' },
         {
           type: 'template',
           text: 'Client Brief Template:\n1) Goal\n2) Target audience\n3) Deadline\n4) Deliverables\n5) Budget range',
         },
-        { type: 'infographic', text: 'Rule: 20% learning + 80% creating. Har naye concept ke baad ek micro output nikalo.' },
-        { type: 'ideaCorner', prompt: `Aaj ${skillName} me 1 simple service define karo jo 24 ghante me deliver ho sake.` },
-        { type: 'tip', text: 'Har project ka checklist banao. Quality aur speed dono improve honge.' },
+        { type: 'infographic', text: 'Rule: 20% learning and 80% creating. Produce one micro output after every new concept.' },
+        { type: 'ideaCorner', prompt: `Define one simple ${skillName} service today that can be delivered within 24 hours.` },
+        { type: 'tip', text: 'Create a checklist for every project. Quality and speed will both improve.' },
       ],
     },
     {
-      title: `Client Communication Blueprint`,
-      imageSuggestion: `${skillName} freelancer talking to client on call with notes`,
+      title: 'Client Communication Blueprint',
+      imageSuggestion: `${skillName} freelancer talking to a client on a call with notes`,
       motionStoryboard: 'Chat bubbles appear with checklist highlights.',
       content: [
-        { type: 'heading', text: 'Client ko impress karne ka simple communication flow' },
+        { type: 'heading', text: 'A simple communication flow that impresses clients' },
         {
           type: 'paragraph',
-          text: 'Har client message me 3 cheezein clear rakho: goal, timeline, next action. Isse trust instantly build hota hai.',
+          text: 'Keep three things clear in every client message: goal, timeline, and next action. This builds trust quickly.',
         },
         {
           type: 'qAndA',
-          question: 'Client ghost kare to kya karu?',
-          answer: '48 hours ke gap ke baad short polite follow-up bhejo with one clear next step.',
+          question: 'What should I do if a client ghosts me?',
+          answer: 'Send a short, polite follow-up after 48 hours with one clear next step.',
         },
         {
           type: 'quiz',
-          question: 'Best client update format kya hai?',
+          question: 'What is the best client update format?',
           options: ['Long random paragraph', 'Short status + next step + ETA', 'No update until final delivery'],
           correctAnswerIndex: 1,
-          explanation: 'Concise status + clear next step se clarity aur confidence dono improve hote hain.',
+          explanation: 'A concise status and clear next step improve clarity and confidence.',
         },
         {
           type: 'poll',
-          question: 'Aap client updates kitni frequency se bhejte ho?',
-          options: ['Daily', 'Alternate day', 'Sirf jab client puchhe'],
+          question: 'How often do you send client updates?',
+          options: ['Daily', 'Alternate day', 'Only when the client asks'],
         },
       ],
     },
     {
-      title: `Portfolio to Projects`,
+      title: 'Portfolio to Projects',
       imageSuggestion: `${skillName} project cards and portfolio showcase`,
       motionStoryboard: 'Cards slide in and expand one by one.',
       content: [
-        { type: 'heading', text: 'Portfolio ko project machine kaise banayein' },
+        { type: 'heading', text: 'How to turn your portfolio into a project machine' },
         {
           type: 'paragraph',
-          text: 'Har project me problem, process, aur result format follow karo. Ye format clients ko fast decision lene me help karta hai.',
+          text: 'Use a problem, process, and result format for every project. It helps clients decide faster.',
         },
         {
           type: 'template',
@@ -290,38 +290,38 @@ const buildLocalCourseFallback = (skillName: string): GeneratedContent => ({
         },
         {
           type: 'doAndDont',
-          dos: ['Before/after dikhayein', 'Numbers mention karein', 'Screenshots clean rakhein'],
+          dos: ['Show before/after', 'Mention numbers', 'Keep screenshots clean'],
           donts: ['Only pretty visuals', 'No context', 'No result mention'],
         },
         {
           type: 'flashcard',
-          front: 'Portfolio ka sabse important section?',
+          front: 'What is the most important portfolio section?',
           back: 'Result-oriented case studies with measurable impact.',
         },
       ],
     },
     {
-      title: `Income Growth Plan`,
+      title: 'Income Growth Plan',
       imageSuggestion: `${skillName} freelancer growth graph with milestones`,
       motionStoryboard: 'Graph line rises with milestone popups.',
       content: [
-        { type: 'heading', text: 'Skill se stable income roadmap' },
+        { type: 'heading', text: 'A stable income roadmap for the skill' },
         {
           type: 'paragraph',
-          text: 'Starter offer se start karo, phir testimonials ke basis pe pricing increment plan banao. Har 3 projects baad rate review karo.',
+          text: 'Start with a starter offer, then increase pricing based on testimonials. Review your rate after every three projects.',
         },
         {
           type: 'benefits',
-          text: 'Structured growth plan se stress kam hota hai aur predictable monthly income build hoti hai.',
+          text: 'A structured growth plan reduces stress and helps you build predictable monthly income.',
         },
         {
           type: 'poll',
-          question: 'Next 30 days me aapka focus kya hoga?',
-          options: ['Portfolio improve', 'Client outreach', 'Skill depth + speed'],
+          question: 'What will be your focus for the next 30 days?',
+          options: ['Portfolio improvement', 'Client outreach', 'Skill depth + speed'],
         },
         {
           type: 'ideaCorner',
-          prompt: `Aaj ${skillName} me ek micro-offer design karo jo 3 din me deliver ho sake aur repeat client generate kare.`,
+          prompt: `Design one ${skillName} micro-offer today that can be delivered in 3 days and can bring repeat clients.`,
         },
       ],
     },
@@ -350,7 +350,7 @@ const sanitizeContentBlock = (rawBlock: unknown): ContentBlock | null => {
     case 'funFact':
       return {
         type,
-        text: toText(block.text, 'Is section ka text unavailable hai.'),
+        text: toText(block.text, 'This section text is unavailable.'),
       } as ContentBlock;
     case 'quiz': {
       const options = toStringArray(block.options, 2);
@@ -540,9 +540,9 @@ export const analyzeImage = async (prompt: string, imageBase64: string, mimeType
   try {
     void logUsageEvent('tool_action', { toolId: 'image-analyzer', action: 'analyze' });
     const data = await callGeminiApi<{ text: string }>('analyzeImage', { prompt, imageBase64, mimeType });
-    return data.text || 'Kuch samajh nahi aaya, phir se try karein.';
+    return data.text || 'The result was unclear. Please try again.';
   } catch (error) {
-    throw new Error(getFriendlyAiErrorMessage(error, 'Image analysis me problem aa gayi. Thodi der baad phir try karo.'));
+    throw new Error(getFriendlyAiErrorMessage(error, 'There was a problem with image analysis. Please try again later.'));
   }
 };
 
@@ -550,9 +550,9 @@ export const analyzeVideo = async (prompt: string, videoBase64: string, mimeType
   try {
     void logUsageEvent('tool_action', { toolId: 'video-analyzer', action: 'analyze' });
     const data = await callGeminiApi<{ text: string }>('analyzeVideo', { prompt, videoBase64, mimeType });
-    return data.text || 'Video ajeeb thi, kuch samajh nahi aaya.';
+    return data.text || 'The video result was unclear. Please try again.';
   } catch (error) {
-    throw new Error(getFriendlyAiErrorMessage(error, 'Video analysis me problem aa gayi. Thodi der baad phir try karo.'));
+    throw new Error(getFriendlyAiErrorMessage(error, 'There was a problem with video analysis. Please try again later.'));
   }
 };
 
@@ -564,7 +564,7 @@ export const animateImage = async (
   onProgress: (message: string) => void
 ): Promise<string> => {
   try {
-    onProgress('Video banana shuru ho raha hai...');
+    onProgress('Video generation is starting...');
     void logUsageEvent('tool_action', { toolId: 'image-animator', action: 'animate' });
     const data = await callGeminiApi<{ videoBase64: string; mimeType: string }>('animateImage', {
       prompt,
@@ -572,12 +572,12 @@ export const animateImage = async (
       mimeType,
       aspectRatio,
     });
-    onProgress('Video taiyaar hai!');
+    onProgress('The video is ready!');
     const bytes = Uint8Array.from(atob(data.videoBase64), (c) => c.charCodeAt(0));
     const blob = new Blob([bytes], { type: data.mimeType || 'video/mp4' });
     return URL.createObjectURL(blob);
   } catch (error) {
-    throw new Error(getFriendlyAiErrorMessage(error, 'Video animation me issue aa gaya. Thodi der baad phir try karo.'));
+    throw new Error(getFriendlyAiErrorMessage(error, 'There was a problem with video animation. Please try again later.'));
   }
 };
 
@@ -603,7 +603,7 @@ export const generateImage = async (
 
     return { imageUrl, altText };
   } catch (error) {
-    throw new Error(getFriendlyAiErrorMessage(error, 'Image generation me issue aa gaya. Thodi der baad phir try karo.'));
+    throw new Error(getFriendlyAiErrorMessage(error, 'There was a problem with image generation. Please try again later.'));
   }
 };
 
@@ -616,7 +616,7 @@ export const generateFastText = async (prompt: string) => {
       yield { text };
     })();
   } catch (error) {
-    throw new Error(getFriendlyAiErrorMessage(error, 'Text generation abhi fail ho gaya. Thodi der baad phir try karo.'));
+    throw new Error(getFriendlyAiErrorMessage(error, 'Text generation failed for now. Please try again later.'));
   }
 };
 
@@ -636,7 +636,7 @@ export const askQna = async (
       sources: Array.isArray(data.sources) ? data.sources : [],
     };
   } catch (error) {
-    throw new Error(getFriendlyAiErrorMessage(error, 'Sorry, abhi AI response nahi de pa raha. Thodi der baad try karein.'));
+    throw new Error(getFriendlyAiErrorMessage(error, 'Sorry, the AI response is unavailable right now. Please try again later.'));
   }
 };
 
@@ -656,11 +656,10 @@ export const generateSpeech = async (text: string): Promise<string> => {
   try {
     const data = await callGeminiApi<{ base64Audio: string }>('generateSpeech', { text });
     if (!data.base64Audio) {
-      throw new Error('Audio generate nahi ho paaya.');
+      throw new Error('Audio could not be generated.');
     }
     return data.base64Audio;
   } catch (error) {
-    throw new Error(getFriendlyAiErrorMessage(error, 'Audio generation me issue aa gaya. Thodi der baad phir try karo.'));
+    throw new Error(getFriendlyAiErrorMessage(error, 'There was a problem with audio generation. Please try again later.'));
   }
 };
-

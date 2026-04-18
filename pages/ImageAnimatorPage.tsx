@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { animateImage } from '../services/geminiService';
 import { fileToBase64 } from '../utils/fileToBase64';
 import Loading from '../components/Loading';
 import ErrorMessage from '../components/ErrorMessage';
+import PageBackButton from '../components/PageBackButton';
 import { useLocale } from '../hooks/useLocale';
 
 const ImageAnimatorPage: React.FC = () => {
@@ -52,9 +52,7 @@ const ImageAnimatorPage: React.FC = () => {
 
   return (
     <div className="container mx-auto max-w-3xl animate-fadeIn">
-      <Link to="/" className="mb-4 inline-block text-brand-accent hover:underline">
-        &larr; {t('common.backTools')}
-      </Link>
+      <PageBackButton label={t('common.backTools')} fallbackTo="/tools" className="mb-4" />
       <div className="rounded-2xl bg-brand-secondary p-6 shadow-lg md:p-8">
         <div className="mb-6 text-center">
           <h1 className="text-3xl font-extrabold text-brand-text md:text-4xl">{t('tool.imageAnimator.title')}</h1>

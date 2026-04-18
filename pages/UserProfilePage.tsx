@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ArrowLeft, 
   User, 
   Mail, 
   Camera, 
@@ -21,6 +19,7 @@ import {
   Edit3,
   X
 } from 'lucide-react';
+import PageBackButton from '../components/PageBackButton';
 import { useAuth } from '../hooks/useAuth';
 import { getCreatorLevel, getLevelProgress, getCompletedCourseCount } from '../services/courseProgressService';
 
@@ -144,12 +143,7 @@ const UserProfilePage: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-5xl pb-24">
-      <Link to="/" className="group mb-8 inline-flex items-center gap-2 text-brand-text-secondary transition-colors hover:text-brand-accent">
-        <div className="rounded-full p-2 ios-glass transition-all group-hover:bg-brand-accent group-hover:text-white">
-          <ArrowLeft size={20} />
-        </div>
-        <span className="font-semibold">Back to Home</span>
-      </Link>
+      <PageBackButton label="Back" fallbackTo="/tools" className="mb-8" />
 
       {/* Profile Header Card */}
       <motion.div 
@@ -547,4 +541,3 @@ const UserProfilePage: React.FC = () => {
 };
 
 export default UserProfilePage;
-

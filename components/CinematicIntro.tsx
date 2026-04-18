@@ -38,11 +38,11 @@ const CinematicIntro: React.FC<CinematicIntroProps> = ({ isOpen, onClose }) => {
 
   const voiceScripts: Record<number, string> = {
     0: "What if learning... felt different?",
-    1: "Introducing a new era of skills. Introducing... Skills Ka Adda.",
+    1: "Introducing a new era of skills. Introducing... Skills Hub.",
     2: "Design. Edit. Code. Market. Animate. All in one intelligent ecosystem.",
     3: "Powered by advanced artificial intelligence. Built for creators. Built for freelancers. Built for you.",
     4: "Your freelance journey... Starts here.",
-    5: "Skills Ka Adda. Start learning. Start earning."
+    5: "Skills Hub. Start learning. Start earning."
   };
 
   // Preload Voiceover
@@ -302,11 +302,11 @@ const CinematicIntro: React.FC<CinematicIntroProps> = ({ isOpen, onClose }) => {
 
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-12 px-12">
                   {[
-                    { icon: MessageSquare, label: 'AI Dost', desc: 'Chat Assistant', delay: 0 },
-                    { icon: ImageIcon, label: 'Chitra AI', desc: '4K Upscaling', delay: 0.3 },
+                    { icon: MessageSquare, label: 'AI Assistant', desc: 'Chat Assistant', delay: 0 },
+                    { icon: ImageIcon, label: 'Image AI', desc: '4K Upscaling', delay: 0.3 },
                     { icon: Type, label: 'Rocket Writer', desc: 'Fast Copywriting', delay: 0.6 },
-                    { icon: Search, label: 'Video Jasoos', desc: 'Deep Analysis', delay: 0.9 },
-                    { icon: Film, label: 'Photo Jivdan', desc: 'Motion Magic', delay: 1.2 },
+                    { icon: Search, label: 'Video Detective', desc: 'Deep Analysis', delay: 0.9 },
+                    { icon: Film, label: 'Motion Photo', desc: 'Motion Magic', delay: 1.2 },
                   ].map((tool, i) => (
                     <motion.div
                       key={i}
@@ -416,8 +416,8 @@ const CinematicIntro: React.FC<CinematicIntroProps> = ({ isOpen, onClose }) => {
                     transition={{ repeat: Infinity, duration: 0.15 }}
                     className="text-4xl md:text-7xl font-black text-white tracking-tighter uppercase leading-none"
                   >
-                    APKA FREELANCE SAFAR <br />
-                    <span className="text-brand-accent">YAHA SE SHURU HOTA HAI</span>
+                    YOUR FREELANCE JOURNEY <br />
+                    <span className="text-brand-accent">STARTS HERE</span>
                   </motion.h2>
 
                   <motion.div
@@ -430,7 +430,7 @@ const CinematicIntro: React.FC<CinematicIntroProps> = ({ isOpen, onClose }) => {
                       <Sparkles size={48} className="text-white" />
                     </div>
                     <div className="space-y-1">
-                      <h1 className="text-4xl font-black text-white tracking-tighter">Skills Ka Adda</h1>
+                      <h1 className="text-4xl font-black text-white tracking-tighter">Skills Hub</h1>
                       <p className="text-brand-accent font-bold uppercase tracking-[0.4em] text-[10px]">Start Learning. Start Earning.</p>
                     </div>
                   </motion.div>

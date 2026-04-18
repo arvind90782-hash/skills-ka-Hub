@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Download, ArrowLeft, Loader2, ShieldAlert } from 'lucide-react';
 import ErrorMessage from '../components/ErrorMessage';
+import PageBackButton from '../components/PageBackButton';
 import { useLocale } from '../hooks/useLocale';
 
 type QualityOption = 'best' | '1080p' | '720p' | '480p';
@@ -16,7 +16,7 @@ const UniversalDownloaderPage: React.FC = () => {
 
   const handleDownload = async () => {
     if (!url.trim()) {
-      setError('Link daalo pehle.');
+      setError('Please enter a link first.');
       return;
     }
 
@@ -47,9 +47,9 @@ const UniversalDownloaderPage: React.FC = () => {
       a.remove();
       URL.revokeObjectURL(fileUrl);
 
-      setSuccess('Download start ho gaya.');
+      setSuccess('Download started.');
     } catch (e: any) {
-      setError(e?.message || 'Download me issue aaya.');
+      setError(e?.message || 'There was a problem with the download.');
     } finally {
       setLoading(false);
     }
@@ -57,15 +57,13 @@ const UniversalDownloaderPage: React.FC = () => {
 
   return (
     <div className="container mx-auto max-w-3xl animate-fadeIn">
-      <Link to="/" className="mb-4 inline-block text-brand-accent hover:underline">
-        &larr; {t('common.backTools')}
-      </Link>
+      <PageBackButton label={t('common.backTools')} fallbackTo="/tools" className="mb-4" />
 
       <div className="rounded-2xl bg-brand-secondary p-6 shadow-lg md:p-8">
         <div className="mb-6 text-center">
           <h1 className="text-3xl font-extrabold text-brand-text md:text-4xl">Media Downloader</h1>
           <p className="mt-2 text-brand-text-secondary">
-            Direct media link (image/video/audio) daalo aur download karo. Sirf legal/authorized content ke liye use karo.
+            Paste a direct media link (image, video, or audio) and download it. Use this only for legal and authorized content.
           </p>
         </div>
 
@@ -75,7 +73,7 @@ const UniversalDownloaderPage: React.FC = () => {
             Safety Notice
           </div>
           <p>
-            YouTube/Facebook/Pinterest jaise platforms ke protected links tool me intentionally blocked hain. Official platform download options use karo.
+            Protected links from platforms like YouTube, Facebook, and Pinterest are intentionally blocked. Use official platform download options.
           </p>
         </div>
 

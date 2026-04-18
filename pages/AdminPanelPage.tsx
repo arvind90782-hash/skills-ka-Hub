@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { collection, limit, onSnapshot, orderBy, query } from 'firebase/firestore';
 import { Activity, ShieldCheck, Users, Wrench } from 'lucide-react';
+import PageBackButton from '../components/PageBackButton';
 import { useAuth } from '../hooks/useAuth';
 import { firestoreDb, isFirebaseConfigured } from '../services/firebase';
 
@@ -83,13 +84,14 @@ const AdminPanelPage: React.FC = () => {
     return (
       <div className="ios-card mx-auto max-w-3xl p-8">
         <h2 className="mb-2 text-3xl font-black text-red-400">Admin Panel Unavailable</h2>
-        <p className="text-brand-text-secondary">Firebase config missing hai. Env setup complete karo.</p>
+        <p className="text-brand-text-secondary">Firebase configuration is missing. Complete the environment setup first.</p>
       </div>
     );
   }
 
   return (
     <div className="mx-auto max-w-7xl space-y-8 pb-20">
+      <PageBackButton label="Back" fallbackTo="/tools" />
       <div className="ios-card rounded-3xl p-8">
         <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-brand-accent/20 bg-brand-accent/10 px-3 py-1 text-xs font-black uppercase tracking-widest text-brand-accent">
           <ShieldCheck size={14} />
@@ -97,7 +99,7 @@ const AdminPanelPage: React.FC = () => {
         </p>
         <h1 className="text-4xl font-black tracking-tight text-brand-text">Admin Control Panel</h1>
         <p className="mt-2 text-brand-text-secondary">
-          Logged in as <b>{user?.email}</b>. Yahan se aap dekh sakte ho kaun login kar raha hai aur website pe kya use ho raha hai.
+          Logged in as <b>{user?.email}</b>. From here you can review who is logging in and what the website is being used for.
         </p>
       </div>
 

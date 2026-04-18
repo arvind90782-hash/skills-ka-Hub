@@ -1,8 +1,6 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  ArrowLeft, 
   Instagram, 
   Mail, 
   Globe, 
@@ -18,13 +16,14 @@ import {
   TrendingUp,
   Users
 } from 'lucide-react';
+import PageBackButton from '../components/PageBackButton';
 
 const CreatorProfilePage: React.FC = () => {
   const creatorInfo = {
     name: 'Nishant Singh',
-    role: 'Video Editor + Website Developer + Creative Designer',
-    about: 'Main ek creative student aur digital creator hoon jise technology aur creativity ka combination bohot pasand hai. Mujhe video editing ka bohot shauk hai aur maine khud editing tools explore karke kaafi creative cheezein seekhi hain.',
-    story: 'Maine ye website isliye banayi hai taaki log boring courses ki jagah fun aur interactive tarike se skills seekh sake. Goal hai logon ko fast aur smart tarike se digital skills sikhana.',
+    role: 'Video Editor, Website Developer, and Creative Designer',
+    about: 'I am a creative student and digital creator who loves the mix of technology and creativity. I especially enjoy video editing and have learned a lot by exploring editing tools and creative workflows on my own.',
+    story: 'I built this website so people can learn skills in a fun, interactive way instead of through boring courses. The goal is to help users build digital skills faster and smarter.',
     skills: [
       'Video Editing',
       'Thumbnail Designing', 
@@ -56,12 +55,7 @@ const CreatorProfilePage: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-5xl pb-24">
-      <Link to="/" className="group mb-8 inline-flex items-center gap-2 text-brand-text-secondary transition-colors hover:text-brand-accent">
-        <div className="rounded-full p-2 ios-glass transition-all group-hover:bg-brand-accent group-hover:text-white">
-          <ArrowLeft size={20} />
-        </div>
-        <span className="font-semibold">Back to Home</span>
-      </Link>
+      <PageBackButton label="Back" fallbackTo="/" className="mb-8" />
 
       {/* Hero Section */}
       <motion.div 
@@ -339,4 +333,3 @@ const CreatorProfilePage: React.FC = () => {
 };
 
 export default CreatorProfilePage;
-

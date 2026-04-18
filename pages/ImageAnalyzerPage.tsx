@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, ArrowLeft, Upload, Sparkles, Wand2, Search, Loader2, Image as ImageIcon } from 'lucide-react';
 import { analyzeImage } from '../services/geminiService';
 import { fileToBase64 } from '../utils/fileToBase64';
 import ErrorMessage from '../components/ErrorMessage';
+import PageBackButton from '../components/PageBackButton';
 import { useLocale } from '../hooks/useLocale';
 
 const ImageAnalyzerPage: React.FC = () => {
@@ -50,15 +50,7 @@ const ImageAnalyzerPage: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-4xl pb-20">
-      <Link
-        to="/"
-        className="group mb-8 inline-flex items-center gap-2 text-brand-text-secondary transition-colors hover:text-brand-accent"
-      >
-        <div className="rounded-full p-2 ios-glass transition-all group-hover:bg-brand-accent group-hover:text-white">
-          <ArrowLeft size={20} />
-        </div>
-        <span className="font-semibold">{t('common.backTools')}</span>
-      </Link>
+      <PageBackButton label={t('common.backTools')} fallbackTo="/tools" className="mb-8" />
 
       <div className="ios-card overflow-hidden">
         <div className="p-8 md:p-12">

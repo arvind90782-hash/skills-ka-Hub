@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
 import { generateFastText } from '../services/geminiService';
 import { GenerateContentResponse } from '@google/genai';
 import CopyButton from '../components/CopyButton';
 // FIX: Import the ErrorMessage component.
 import ErrorMessage from '../components/ErrorMessage';
+import PageBackButton from '../components/PageBackButton';
 import { useLocale } from '../hooks/useLocale';
 
 const RocketWriterPage: React.FC = () => {
@@ -51,7 +51,7 @@ const RocketWriterPage: React.FC = () => {
 
     return (
         <div className="container mx-auto max-w-3xl animate-fadeIn">
-            <Link to="/" className="text-brand-accent hover:underline mb-4 inline-block">&larr; {t('common.backTools')}</Link>
+            <PageBackButton label={t('common.backTools')} fallbackTo="/tools" className="mb-4" />
             <div className="bg-brand-secondary rounded-2xl shadow-lg p-6 md:p-8">
                 <div className="text-center mb-6">
                     <h1 className="text-3xl md:text-4xl font-extrabold text-brand-text">{t('tool.rocketWriter.title')}</h1>

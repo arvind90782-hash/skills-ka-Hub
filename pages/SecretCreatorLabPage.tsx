@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { generateFastText } from '../services/geminiService';
 import ErrorMessage from '../components/ErrorMessage';
+import PageBackButton from '../components/PageBackButton';
 import {
   getCreatorLevel,
   getLevelProgress,
@@ -66,7 +67,7 @@ type GiftItem = {
 const ULTRA_RARE_GIFTS: GiftCategory[] = [
   {
     id: 'pro-creator-assets',
-    name: '💎 Pro Creator Assets',
+    name: 'Pro Creator Assets',
     icon: <Box size={20} />,
     color: 'from-purple-500 to-pink-500',
     gifts: [
@@ -81,7 +82,7 @@ const ULTRA_RARE_GIFTS: GiftCategory[] = [
   },
   {
     id: 'hidden-ai-tools',
-    name: '🤖 Hidden AI Tools',
+    name: 'Hidden AI Tools',
     icon: <Sparkles size={20} />,
     color: 'from-cyan-500 to-blue-500',
     gifts: [
@@ -94,7 +95,7 @@ const ULTRA_RARE_GIFTS: GiftCategory[] = [
   },
   {
     id: 'creator-resources',
-    name: '📚 Creator Resources',
+    name: 'Creator Resources',
     icon: <Layers size={20} />,
     color: 'from-green-500 to-emerald-500',
     gifts: [
@@ -107,7 +108,7 @@ const ULTRA_RARE_GIFTS: GiftCategory[] = [
   },
   {
     id: 'pro-tools-packs',
-    name: '🛠️ Pro Tools Packs',
+    name: 'Pro Tools Packs',
     icon: <Code size={20} />,
     color: 'from-amber-500 to-orange-500',
     gifts: [
@@ -137,29 +138,29 @@ const TOOLS: ToolConfig[] = [
   {
     id: 'reel-idea-builder',
     title: 'Reel Idea Builder',
-    description: 'Topic do, 5 reel ideas + hook + concept turant.',
-    placeholder: 'Topic likho... (example: freelance video editing)',
-    actionLabel: 'Ideas Generate Karo',
+    description: 'Enter a topic and instantly get 5 reel ideas with hooks and concepts.',
+    placeholder: 'Enter a topic... (example: freelance video editing)',
+    actionLabel: 'Generate Ideas',
     icon: Lightbulb,
-    buildPrompt: (input) => `Tum creator strategist ho.
+    buildPrompt: (input) => `You are a creator strategist.
 Topic: ${input}
-Return only concise Hinglish output:
+Return only a concise English output:
 5 reel ideas.
-Har idea me:
+For each idea include:
 - Hook line
-- 20-30 sec concept
+- 20-30 second concept
 No markdown, no code, fast readable format.`,
   },
   {
     id: 'reel-script-maker',
     title: 'Reel Script Maker',
-    description: 'Idea ko short script me convert karo: intro, main, ending.',
-    placeholder: 'Reel idea likho... (example: video editing se first client kaise mile)',
-    actionLabel: 'Script Banao',
+    description: 'Convert an idea into a short script with an intro, main section, and ending.',
+    placeholder: 'Enter a reel idea... (example: how to get your first client from video editing)',
+    actionLabel: 'Generate Script',
     icon: FileText,
-    buildPrompt: (input) => `Tum short-form reel script writer ho.
+    buildPrompt: (input) => `You are a short-form reel script writer.
 Idea: ${input}
-Output in Hinglish with this exact structure:
+Output in English with this exact structure:
 Intro:
 Main:
 Ending CTA:
@@ -168,74 +169,74 @@ Keep total under 140 words, no markdown, no code.`,
   {
     id: 'thumbnail-title-tester',
     title: 'Thumbnail Title Tester',
-    description: 'Titles compare karke batao kaunsa sabse clickable hai aur kyun.',
-    placeholder: 'Multiple titles line by line likho...',
-    actionLabel: 'Best Title Pick Karo',
+    description: 'Compare titles and identify which one is the most clickable, with reasons.',
+    placeholder: 'Enter multiple titles, one per line...',
+    actionLabel: 'Pick Best Title',
     icon: TrendingUp,
-    buildPrompt: (input) => `Tum YouTube CTR analyst ho.
+    buildPrompt: (input) => `You are a YouTube CTR analyst.
 Candidate titles:
 ${input}
-Hinglish me output do:
+Output in English:
 1) Best title
-2) Do second-best options
-3) Kyun best hai (max 3 short lines)
+2) Two second-best options
+3) Why it is best (max 3 short lines)
 No markdown, no code.`,
   },
   {
     id: 'content-idea-generator',
     title: 'Content Idea Generator',
-    description: 'Niche do aur unique video/topic ideas pao.',
-    placeholder: 'Apna niche likho... (example: coding for beginners)',
-    actionLabel: 'Content Ideas Lo',
+    description: 'Enter a niche and get unique video or topic ideas.',
+    placeholder: 'Enter your niche... (example: coding for beginners)',
+    actionLabel: 'Get Content Ideas',
     icon: Wand2,
-    buildPrompt: (input) => `Tum content growth expert ho.
+    buildPrompt: (input) => `You are a content growth expert.
 Niche: ${input}
-Hinglish me 10 fresh content ideas do.
-Har idea max 1 line.
+Give 10 fresh content ideas in English.
+Keep each idea to 1 line max.
 No markdown, no code, no explanation text.`,
   },
   {
     id: 'boring-content-fixer',
     title: 'Boring Content Fixer',
-    description: 'Boring paragraph ko engaging storytelling tone me badlo.',
-    placeholder: 'Boring paragraph paste karo...',
-    actionLabel: 'Engaging Banao',
+    description: 'Turn a boring paragraph into engaging storytelling copy.',
+    placeholder: 'Paste a boring paragraph...',
+    actionLabel: 'Make Engaging',
     icon: Sparkles,
-    buildPrompt: (input) => `Tum engaging storyteller ho.
-Is text ko readable, creator-style Hinglish me rewrite karo:
+    buildPrompt: (input) => `You are an engaging storyteller.
+Rewrite this text in readable, creator-style English:
 ${input}
 Rules:
 - 4 to 7 short lines
-- curiosity + emotion add karo
+- add curiosity and emotion
 - no markdown
 - no code`,
   },
   {
     id: 'skill-practice-generator',
     title: 'Skill Practice Generator',
-    description: 'Skill ke liye real-world practice challenges generate karo.',
-    placeholder: 'Skill likho... (example: motion graphics)',
-    actionLabel: 'Practice Challenges Banao',
+    description: 'Generate real-world practice challenges for any skill.',
+    placeholder: 'Enter a skill... (example: motion graphics)',
+    actionLabel: 'Generate Practice',
     icon: Target,
-    buildPrompt: (input) => `Tum skill coach ho.
+    buildPrompt: (input) => `You are a skill coach.
 Skill: ${input}
-Hinglish me 7 practical challenges do.
-Easy se hard order me.
-Har challenge 1 line.
+Give 7 practical challenges in English.
+Order them from easy to hard.
+Keep each challenge to 1 line.
 No markdown, no code.`,
   },
   {
     id: 'creator-motivation',
     title: 'Creator Motivation Tool',
-    description: 'Creative block me quick push + mini action plan.',
-    placeholder: 'Current block/mood likho...',
-    actionLabel: 'Motivation Unlock Karo',
+    description: 'Get a quick push and a mini action plan when you feel creatively blocked.',
+    placeholder: 'Describe your current block or mood...',
+    actionLabel: 'Unlock Motivation',
     icon: Sparkles,
-    buildPrompt: (input) => `Tum high-energy creator mentor ho.
+    buildPrompt: (input) => `You are a high-energy creator mentor.
 User block: ${input}
-Hinglish me do:
-1) 3-line motivation reset
-2) Next 30 minute ka mini action plan
+Give the response in English:
+1) A 3-line motivation reset
+2) A next-30-minute mini action plan
 3) 1 small challenge
 Keep concise, no markdown, no code.`,
   },
@@ -275,7 +276,7 @@ const SecretCreatorLabPage: React.FC = () => {
   const runTool = async (tool: ToolConfig) => {
     const input = (inputs[tool.id] || '').trim();
     if (!input) {
-      setError('Pehle input do, phir generate karo.');
+      setError('Please enter input before generating.');
       return;
     }
 
@@ -283,10 +284,10 @@ const SecretCreatorLabPage: React.FC = () => {
     setLoadingTool(tool.id);
     try {
       const text = await readStreamedText(tool.buildPrompt(input));
-      setOutputs((prev) => ({ ...prev, [tool.id]: text || 'Output blank aaya. Dobara try karo.' }));
+      setOutputs((prev) => ({ ...prev, [tool.id]: text || 'The output was empty. Please try again.' }));
       void logUsageEvent('tool_action', { toolId: `secret-lab-${tool.id}`, action: 'generate' });
     } catch (e: any) {
-      setError(e?.message || 'Secret tool run karte waqt issue aa gaya.');
+      setError(e?.message || 'There was a problem running the secret tool.');
     } finally {
       setLoadingTool(null);
     }
@@ -294,12 +295,7 @@ const SecretCreatorLabPage: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-6xl pb-24">
-      <Link to="/" className="group mb-8 inline-flex items-center gap-2 text-brand-text-secondary transition-colors hover:text-brand-accent">
-        <div className="rounded-full p-2 ios-glass transition-all group-hover:bg-brand-accent group-hover:text-white">
-          ←
-        </div>
-        <span className="font-semibold">Home par wapas</span>
-      </Link>
+      <PageBackButton label="Back" fallbackTo="/tools" className="mb-8" />
 
       {/* Hero Header */}
       <motion.div 
@@ -327,23 +323,23 @@ const SecretCreatorLabPage: React.FC = () => {
                 Secret Reward Vault
               </div>
               <h1 className="mt-4 text-4xl font-black tracking-tight text-brand-text md:text-5xl">
-                🎁 Secret Creator Lab
+                Secret Creator Lab
               </h1>
               <p className="mt-4 text-lg text-brand-text-secondary max-w-2xl">
-                Yo! Agar tum ye tak pahunch gaye, matlab tumne koi course properly complete kiya hai. 
-                <span className="text-brand-accent font-bold"> Ab tumhare liye ultra-rare gifts unlock hain!</span>
+                You made it here, which means you completed a course properly.
+                <span className="text-brand-accent font-bold"> Ultra-rare gifts are now unlocked for you!</span>
                 <br />
-                <span className="text-sm">Ye saari cheezein internet pe easily nahi milti. Enjoy! 🚀</span>
+                <span className="text-sm">These resources are not easy to find on the open internet. Enjoy!</span>
               </p>
 
               {!labUnlocked ? (
                 <div className="mt-6 rounded-2xl border border-red-400/30 bg-red-500/10 p-4 max-w-md">
                   <p className="font-bold text-red-300 flex items-center gap-2">
                     <Lock size={18} />
-                    Abhi Locked Hai!
+                    Locked for Now
                   </p>
                   <p className="mt-2 text-sm text-brand-text-secondary">
-                    Unlock ke liye course ke saare lessons + quiz + poll + Q&A + mini challenge complete karo.
+                    To unlock it, complete all lessons, quizzes, polls, Q&A blocks, and mini challenges.
                   </p>
                 </div>
               ) : (
@@ -374,7 +370,7 @@ const SecretCreatorLabPage: React.FC = () => {
               transition={{ repeat: Infinity, duration: 2 }}
               className="mt-6 md:mt-0"
             >
-              <div className="text-8xl">🎁</div>
+              <Gift size={72} className="text-brand-accent" />
             </motion.div>
           </div>
         </div>
@@ -465,7 +461,7 @@ const SecretCreatorLabPage: React.FC = () => {
                 onClick={() => setActiveGiftCategory(null)}
                 className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-brand-accent hover:underline"
               >
-                ← All Gift Categories
+                Back to All Categories
               </button>
 
               {(() => {
@@ -488,7 +484,7 @@ const SecretCreatorLabPage: React.FC = () => {
                     <div className="mb-6 rounded-xl border border-amber-400/30 bg-amber-500/10 p-4">
                       <p className="text-sm font-bold text-amber-300 flex items-center gap-2">
                         <Star size={16} />
-                        Coming Soon - Vault Unlocking Soon!
+                        Coming Soon - Vault Opening Soon!
                       </p>
                       <p className="mt-1 text-xs text-brand-text-secondary">
                         These ultra-rare resources will be available for download soon. Keep learning to unlock them!
@@ -579,7 +575,7 @@ const SecretCreatorLabPage: React.FC = () => {
 
                   {!unlocked ? (
                     <div className="rounded-xl border border-brand-text-secondary/15 bg-brand-primary/40 p-4 text-sm text-brand-text-secondary">
-                      Is tool ko unlock karne ke liye level upgrade karo.
+                      Upgrade your level to unlock this tool.
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -623,19 +619,18 @@ const SecretCreatorLabPage: React.FC = () => {
           transition={{ delay: 0.2 }}
           className="mt-6 ios-card border border-brand-text-secondary/10 p-8 text-center"
         >
-          <div className="text-6xl mb-4">🔒</div>
+          <Lock size={48} className="mx-auto mb-4 text-brand-accent" />
           <h3 className="text-2xl font-black text-brand-text">Secret Vault Locked!</h3>
           <p className="mt-4 text-brand-text-secondary max-w-md mx-auto">
-            Ye ultra-rare gifts aur powerful tools tabhi unlock honge jab tum koi course properly complete karoge.
+            These ultra-rare gifts and powerful tools will unlock only after you complete a course properly.
             <br />
-            <span className="text-brand-accent font-bold">Quiz + Poll + Q&A + Mini Challenges sab complete karo!</span>
+            <span className="text-brand-accent font-bold">Complete the quiz, poll, Q&A, and mini challenges!</span>
           </p>
           <Link
             to="/"
             className="mt-6 inline-flex items-center gap-2 rounded-xl bg-brand-accent px-6 py-3 font-bold text-white"
           >
             Start Learning
-            →
           </Link>
         </motion.div>
       )}
@@ -648,7 +643,7 @@ const SecretCreatorLabPage: React.FC = () => {
         className="mt-8 text-center"
       >
         <p className="text-lg font-medium text-brand-text-secondary">
-          "Learning + Action = Success 🚀"
+          "Learning + Action = Success"
         </p>
       </motion.div>
     </div>
@@ -656,4 +651,3 @@ const SecretCreatorLabPage: React.FC = () => {
 };
 
 export default SecretCreatorLabPage;
-

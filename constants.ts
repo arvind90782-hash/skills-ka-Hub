@@ -17,7 +17,7 @@ export const SKILLS: Skill[] = [
   {
     id: 'graphic-design',
     name: 'Graphic Design',
-    description: 'Shaandaar visuals aur illustrations banana seekhein.',
+    description: 'Learn how to create polished visuals, brand assets, and illustrations.',
     icon: DesignIcon,
     color: 'from-pink-500 to-rose-500',
     type: 'skill',
@@ -26,7 +26,7 @@ export const SKILLS: Skill[] = [
   {
     id: 'video-editing',
     name: 'Video Editing',
-    description: 'Video ke zariye kahani sunane ki kala mein maahir banein.',
+    description: 'Turn raw footage into stories that feel sharp, clear, and engaging.',
     icon: VideoIcon,
     color: 'from-blue-500 to-cyan-500',
     type: 'skill',
@@ -35,7 +35,7 @@ export const SKILLS: Skill[] = [
   {
     id: 'content-writing',
     name: 'Content Writing',
-    description: 'Zabardast kahaniyan aur asardaar copy likhna seekhein.',
+    description: 'Write clear copy, strong narratives, and content that keeps attention.',
     icon: WriteIcon,
     color: 'from-green-400 to-emerald-500',
     type: 'skill',
@@ -44,7 +44,7 @@ export const SKILLS: Skill[] = [
   {
     id: 'programming',
     name: 'Programming',
-    description: 'Websites, apps, aur software solutions banana seekhein.',
+    description: 'Build websites, apps, and software solutions with confidence.',
     icon: CodeIcon,
     color: 'from-indigo-500 to-purple-600',
     type: 'skill',
@@ -53,7 +53,7 @@ export const SKILLS: Skill[] = [
   {
     id: 'digital-marketing',
     name: 'Digital Marketing',
-    description: 'Brands aur audience ko online badhayein.',
+    description: 'Grow brands and audiences with practical online marketing skills.',
     icon: MarketingIcon,
     color: 'from-amber-500 to-orange-500',
     type: 'skill',
@@ -62,7 +62,7 @@ export const SKILLS: Skill[] = [
   {
     id: 'animation',
     name: 'Animation',
-    description: 'Motion graphics se ideas ko zinda karein.',
+    description: 'Bring ideas to life with motion, timing, and visual rhythm.',
     icon: AnimationIcon,
     color: 'from-teal-400 to-sky-500',
     type: 'skill',
@@ -74,7 +74,7 @@ export const TOOLS: Tool[] = [
   {
     id: 'secret-creator-lab',
     name: 'Secret Creator Lab',
-    description: 'Course complete karke level-based creator tools unlock karein.',
+    description: 'Unlock premium creator tools and reward content by completing courses.',
     icon: BoltIcon,
     color: 'from-fuchsia-500 to-cyan-500',
     type: 'tool',
@@ -83,34 +83,16 @@ export const TOOLS: Tool[] = [
   {
     id: 'ultra-tools',
     name: 'Ultra Tools',
-    description: 'AI-powered tools for creators - viral scripts, thumbnails, ideas & more!',
+    description: 'Advanced AI brainstorming tools for creators, editors, and strategists.',
     icon: BoltIcon,
     color: 'from-purple-500 to-pink-500',
     type: 'tool',
     path: '/ultra-tools',
   },
   {
-    id: 'creator-profile',
-    name: 'Creator Profile',
-    description: 'Meet the creator behind this website',
-    icon: BoltIcon,
-    color: 'from-amber-500 to-orange-500',
-    type: 'tool',
-    path: '/creator-profile',
-  },
-  {
-    id: 'user-profile',
-    name: 'My Profile',
-    description: 'Your personal learning dashboard',
-    icon: BoltIcon,
-    color: 'from-cyan-500 to-blue-500',
-    type: 'tool',
-    path: '/user-profile',
-  },
-  {
     id: 'qna-bot',
-    name: 'AI Dost',
-    description: 'Google Search se jude, up-to-date jawabat paayein.',
+    name: 'AI Buddy',
+    description: 'Ask questions and get fresh answers with search-backed AI.',
     icon: ChatIcon,
     color: 'from-cyan-500 to-blue-500',
     type: 'tool',
@@ -118,8 +100,8 @@ export const TOOLS: Tool[] = [
   },
   {
     id: 'image-generator',
-    name: 'Chitra-AI',
-    description: 'Apne ideas ko 4K quality tak ki images mein badlein.',
+    name: 'Image AI',
+    description: 'Turn text prompts into stunning images.',
     icon: ImageIcon,
     color: 'from-rose-400 to-red-500',
     type: 'tool',
@@ -128,16 +110,16 @@ export const TOOLS: Tool[] = [
   {
     id: 'rocket-writer',
     name: 'Rocket Writer',
-    description: 'Bijli ki tezi se content ideas aur headlines paayein.',
-    icon: BoltIcon,
+    description: 'Generate fast, clean copy for ideas, captions, and prompts.',
+    icon: WriteIcon,
     color: 'from-amber-400 to-orange-500',
     type: 'tool',
     path: '/rocket-writer',
   },
   {
     id: 'image-analyzer',
-    name: 'Chitra Reporter',
-    description: 'Photo upload karein aur uske baare mein kuch bhi poochein.',
+    name: 'Image Reporter',
+    description: 'Upload an image and ask the AI what it notices.',
     icon: AnalyzeIcon,
     color: 'from-red-500 to-orange-500',
     type: 'tool',
@@ -145,8 +127,8 @@ export const TOOLS: Tool[] = [
   },
   {
     id: 'video-analyzer',
-    name: 'Video Ka Jasoos',
-    description: 'Video upload karein aur uske andar ki jaankari nikalein.',
+    name: 'Video Detective',
+    description: 'Upload a video and pull useful insights from it.',
     icon: VideoIcon,
     color: 'from-purple-500 to-indigo-500',
     type: 'tool',
@@ -154,8 +136,8 @@ export const TOOLS: Tool[] = [
   },
   {
     id: 'image-animator',
-    name: 'Photo Ko Jivdan Do',
-    description: 'Ek photo se Veo ki madad se video banayein.',
+    name: 'Animate Photo',
+    description: 'Turn a single image into a short animated video.',
     icon: MovieIcon,
     color: 'from-green-500 to-teal-500',
     type: 'tool',
@@ -164,7 +146,7 @@ export const TOOLS: Tool[] = [
   {
     id: 'media-downloader',
     name: 'Media Downloader',
-    description: 'Direct media links se image/video/audio download karein.',
+    description: 'Download direct image, video, or audio links safely.',
     icon: DownloadIcon,
     color: 'from-slate-500 to-zinc-600',
     type: 'tool',
@@ -173,7 +155,7 @@ export const TOOLS: Tool[] = [
   {
     id: 'resume-cover-letter',
     name: 'Resume + Cover Letter AI',
-    description: 'ATS-friendly resume aur cover letter generate karein.',
+    description: 'Generate ATS-friendly resumes and cover letters.',
     icon: WriteIcon,
     color: 'from-blue-500 to-indigo-600',
     type: 'tool',
@@ -182,7 +164,7 @@ export const TOOLS: Tool[] = [
   {
     id: 'proposal-writer',
     name: 'Proposal Writer',
-    description: 'Winning client proposals turant taiyar karein.',
+    description: 'Draft stronger client proposals in seconds.',
     icon: MarketingIcon,
     color: 'from-amber-500 to-orange-500',
     type: 'tool',
@@ -191,7 +173,7 @@ export const TOOLS: Tool[] = [
   {
     id: 'invoice-quotation',
     name: 'Invoice + Quotation',
-    description: 'Professional invoice aur quotation generate karein.',
+    description: 'Create professional invoices and quotations quickly.',
     icon: DownloadIcon,
     color: 'from-emerald-500 to-green-600',
     type: 'tool',
@@ -200,7 +182,7 @@ export const TOOLS: Tool[] = [
   {
     id: 'contract-generator',
     name: 'Contract Generator',
-    description: 'Freelance agreement draft ready karein.',
+    description: 'Create a clean freelance agreement draft.',
     icon: CodeIcon,
     color: 'from-slate-500 to-gray-700',
     type: 'tool',
@@ -209,7 +191,7 @@ export const TOOLS: Tool[] = [
   {
     id: 'portfolio-builder',
     name: 'Portfolio Builder',
-    description: 'Case-study based portfolio content banayein.',
+    description: 'Turn projects into polished case-study content.',
     icon: DesignIcon,
     color: 'from-pink-500 to-rose-600',
     type: 'tool',
@@ -218,7 +200,7 @@ export const TOOLS: Tool[] = [
   {
     id: 'thumbnail-hook-generator',
     name: 'Thumbnail + Hook',
-    description: 'High-CTR hooks aur thumbnail text ideas paayein.',
+    description: 'Get high-CTR hook ideas and thumbnail text variations.',
     icon: VideoIcon,
     color: 'from-red-500 to-pink-600',
     type: 'tool',
@@ -227,7 +209,7 @@ export const TOOLS: Tool[] = [
   {
     id: 'seo-blog-toolkit',
     name: 'SEO Blog Toolkit',
-    description: 'Keywords, outline, meta tags aur FAQ schema banayein.',
+    description: 'Generate keywords, outlines, meta tags, and FAQs.',
     icon: AnalyzeIcon,
     color: 'from-cyan-500 to-sky-600',
     type: 'tool',
@@ -236,7 +218,7 @@ export const TOOLS: Tool[] = [
   {
     id: 'social-calendar',
     name: 'Social Calendar',
-    description: '30-day social content plan generate karein.',
+    description: 'Build a 30-day social content plan.',
     icon: ChatIcon,
     color: 'from-violet-500 to-purple-600',
     type: 'tool',
@@ -245,7 +227,7 @@ export const TOOLS: Tool[] = [
   {
     id: 'meeting-action-items',
     name: 'Meeting Action Items',
-    description: 'Meeting notes ko tasks aur deadlines me badlein.',
+    description: 'Convert meeting notes into tasks and deadlines.',
     icon: AudioIcon,
     color: 'from-teal-500 to-cyan-600',
     type: 'tool',
@@ -254,7 +236,7 @@ export const TOOLS: Tool[] = [
   {
     id: 'email-assistant',
     name: 'Email Assistant',
-    description: 'Client emails aur follow-ups smartly draft karein.',
+    description: 'Draft better client emails and follow-ups.',
     icon: WriteIcon,
     color: 'from-indigo-500 to-blue-600',
     type: 'tool',
@@ -263,7 +245,7 @@ export const TOOLS: Tool[] = [
   {
     id: 'pricing-calculator',
     name: 'Pricing Calculator',
-    description: 'Hourly aur package rates calculate karein.',
+    description: 'Estimate hourly rates and package pricing.',
     icon: BoltIcon,
     color: 'from-yellow-500 to-amber-600',
     type: 'tool',
@@ -272,7 +254,7 @@ export const TOOLS: Tool[] = [
   {
     id: 'file-converter',
     name: 'File Converter',
-    description: 'Image files ko PNG/JPG/WEBP me convert karein.',
+    description: 'Convert image files between PNG, JPG, and WEBP.',
     icon: ImageIcon,
     color: 'from-green-500 to-lime-600',
     type: 'tool',
@@ -281,7 +263,7 @@ export const TOOLS: Tool[] = [
   {
     id: 'code-bug-finder',
     name: 'Code Bug Finder',
-    description: 'Code bugs detect karke refactor suggestions paayein.',
+    description: 'Spot bugs and get cleaner refactor suggestions.',
     icon: CodeIcon,
     color: 'from-purple-500 to-indigo-700',
     type: 'tool',
@@ -290,7 +272,7 @@ export const TOOLS: Tool[] = [
   {
     id: 'interview-prep-bot',
     name: 'Interview Prep Bot',
-    description: 'Role-based mock interview aur prep plan paayein.',
+    description: 'Practice role-based mock interviews and prep plans.',
     icon: ChatIcon,
     color: 'from-fuchsia-500 to-pink-600',
     type: 'tool',
@@ -299,7 +281,7 @@ export const TOOLS: Tool[] = [
   {
     id: 'habit-sprint-tracker',
     name: 'Habit Sprint Tracker',
-    description: 'Daily tasks track karke productivity boost karein.',
+    description: 'Track daily tasks and keep your momentum visible.',
     icon: BoltIcon,
     color: 'from-orange-500 to-red-600',
     type: 'tool',
@@ -308,7 +290,7 @@ export const TOOLS: Tool[] = [
   {
     id: 'smart-link-hub',
     name: 'Smart Link Hub',
-    description: 'Raw URLs into structured knowledge, insights & action systems.',
+    description: 'Turn raw links into structured knowledge and action systems.',
     icon: AnalyzeIcon,
     color: 'from-emerald-500 to-teal-500',
     type: 'tool',
@@ -317,45 +299,38 @@ export const TOOLS: Tool[] = [
 ];
 
 export const MAKER_PROFILE = {
-
   name: 'Nishant Singh',
-  role: 'Video Editor + Website Developer + Creative Designer',
-  bio: 'Main ek creative student aur digital creator hoon jise technology aur creativity ka combination bohot pasand hai. Mujhe video editing ka bohot shauk hai aur maine khud editing tools explore karke kaafi creative cheezein seekhi hain.',
-  story: 'Maine ye website isliye banayi hai taaki log boring courses ki jagah fun aur interactive tarike se skills seekh sake. Goal hai logon ko fast aur smart tarike se digital skills sikhana.',
+  role: 'Video Editor, Website Developer, and Creative Designer',
+  bio: 'I am a creative student and digital creator who enjoys building products where technology and creativity meet. I love video editing and I enjoy exploring tools that help ideas become real.',
+  story:
+    'I built this website so people can learn skills through fun, interactive, and practical experiences instead of boring courses. The goal is to help learners move faster and smarter.',
   email: 'arvind90782@gmail.com',
   website: 'https://skillskahub.vercel.app',
   instagram: 'https://instagram.com/editor.nishant',
   imageUrl: 'https://drive.google.com/uc?export=download&id=1e_jpmmyBMp9GT7aKE3_mFVQ5amBxhCZ-',
-  skills: [
-    'Video Editing',
-    'Thumbnail Designing',
-    'Graphic Design',
-    'Website Development',
-    'AI Tools Building',
-    'Content Creation'
-  ],
+  skills: ['Video Editing', 'Thumbnail Design', 'Graphic Design', 'Website Development', 'AI Tools Building', 'Content Creation'],
   services: [
-    { title: 'Video Editor', description: 'Professional video editing for YouTube, Instagram, and more' },
-    { title: 'Website Developer', description: 'Modern, fast, and beautiful websites' },
-    { title: 'Creative Designer', description: 'Thumbnails, graphics, and visual content' }
-  ]
+    { title: 'Video Editor', description: 'Professional editing for YouTube, Instagram, and more' },
+    { title: 'Website Developer', description: 'Modern, fast, and polished websites' },
+    { title: 'Creative Designer', description: 'Thumbnails, graphics, and visual content' },
+  ],
 };
 
 export const WEBSITE_FAQ = [
   {
-    q: 'Ye website kis ke liye hai?',
-    a: 'Beginners aur freelancers dono ke liye. Yahan structured courses, AI tools, practice flow aur real output system diya gaya hai.',
+    q: 'Who is this website for?',
+    a: 'It is designed for beginners and freelancers who want a practical, interactive way to learn skills.',
   },
   {
-    q: 'Kya courses full practical hain?',
-    a: 'Haan. Har course me step-by-step flow, quick checks, quizzes, activity board aur reward unlock system diya gaya hai.',
+    q: 'Are the courses practical?',
+    a: 'Yes. Each course uses step-by-step lessons, quick checks, quizzes, activity boards, and rewards.',
   },
   {
-    q: 'Special member kaise bante hain?',
-    a: 'Course end tak complete karke last page par special member claim karo. Fir assets pack aur member perks unlock ho jate hain.',
+    q: 'How do I become a special member?',
+    a: 'Complete the full course and claim the special member reward on the final page.',
   },
   {
-    q: 'Agar app slow lage ya error aaye to?',
-    a: 'Reload karo aur dobara try karo. Agar issue rahe to maker section me diye contact pe details share karo.',
+    q: 'What should I do if the app feels slow or shows an error?',
+    a: 'Refresh the page and try again. If the issue continues, contact the creator with the details.',
   },
 ];

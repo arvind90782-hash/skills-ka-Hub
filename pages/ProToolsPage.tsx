@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, Navigate, useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 import { Copy, Download, MessageSquare, Plus, RefreshCw, Trash2 } from 'lucide-react';
 import { generateFastText } from '../services/geminiService';
 import ErrorMessage from '../components/ErrorMessage';
 import { useLocale } from '../hooks/useLocale';
+import PageBackButton from '../components/PageBackButton';
 
 type ToolId =
   | 'resume-cover-letter'
@@ -54,43 +55,43 @@ const TOOL_META: Record<ToolId, ToolMeta> = {
   'resume-cover-letter': {
     id: 'resume-cover-letter',
     title: 'Resume + Cover Letter AI',
-    subtitle: 'Role-based ATS-friendly resume aur cover letter ready kare.',
+    subtitle: 'Create an ATS-friendly resume and cover letter based on the role.',
     mode: 'ai',
   },
   'proposal-writer': {
     id: 'proposal-writer',
     title: 'Proposal Writer',
-    subtitle: 'Upwork/Fiverr style winning proposal draft kare.',
+    subtitle: 'Draft winning proposals for Upwork or Fiverr.',
     mode: 'ai',
   },
   'invoice-quotation': {
     id: 'invoice-quotation',
     title: 'Invoice + Quotation Generator',
-    subtitle: 'Line-items ke saath professional invoice banaye.',
+    subtitle: 'Create a professional invoice with itemized line items.',
     mode: 'invoice',
   },
   'contract-generator': {
     id: 'contract-generator',
     title: 'Contract Generator',
-    subtitle: 'Freelance agreement ka clean draft turant banaye.',
+    subtitle: 'Generate a clean freelance agreement draft instantly.',
     mode: 'contract',
   },
   'portfolio-builder': {
     id: 'portfolio-builder',
     title: 'Portfolio Builder',
-    subtitle: 'Projects ko case-study format me convert kare.',
+    subtitle: 'Convert projects into compelling case studies.',
     mode: 'ai',
   },
   'thumbnail-hook-generator': {
     id: 'thumbnail-hook-generator',
     title: 'Thumbnail + Hook Generator',
-    subtitle: 'High-CTR thumbnail text aur 3-sec hooks generate kare.',
+    subtitle: 'Generate high-CTR thumbnail text and three-second hooks.',
     mode: 'ai',
   },
   'seo-blog-toolkit': {
     id: 'seo-blog-toolkit',
     title: 'SEO Blog Toolkit',
-    subtitle: 'Keyword clusters, outline, meta tags aur FAQs generate kare.',
+    subtitle: 'Generate keyword clusters, outlines, meta tags, and FAQs.',
     mode: 'ai',
   },
   'social-calendar': {
@@ -102,7 +103,7 @@ const TOOL_META: Record<ToolId, ToolMeta> = {
   'meeting-action-items': {
     id: 'meeting-action-items',
     title: 'Meeting Notes to Action Items',
-    subtitle: 'Raw notes ko tasks, owners, deadline me convert kare.',
+    subtitle: 'Convert raw notes into tasks, owners, and deadlines.',
     mode: 'ai',
   },
   'email-assistant': {
@@ -126,19 +127,19 @@ const TOOL_META: Record<ToolId, ToolMeta> = {
   'code-bug-finder': {
     id: 'code-bug-finder',
     title: 'Code Bug Finder + Refactor',
-    subtitle: 'Code issues detect kare aur cleaner refactor suggest kare.',
+    subtitle: 'Detect code issues and suggest a cleaner refactor.',
     mode: 'ai',
   },
   'interview-prep-bot': {
     id: 'interview-prep-bot',
     title: 'Interview Prep Bot',
-    subtitle: 'Role based mock questions aur improvement plan de.',
+    subtitle: 'Generate role-based mock questions and an improvement plan.',
     mode: 'ai',
   },
   'habit-sprint-tracker': {
     id: 'habit-sprint-tracker',
     title: 'Habit / Study Sprint Tracker',
-    subtitle: 'Daily sprint tasks track karo with streak feel.',
+    subtitle: 'Track daily sprint tasks with a streak-style flow.',
     mode: 'tracker',
   },
 };
@@ -372,7 +373,7 @@ const ProToolsPage: React.FC = () => {
       const compact = await generateCompactAiText(prompt);
       setResult(compact);
     } catch (e: any) {
-      setError(e?.message || 'AI response aane me issue aaya.');
+      setError(e?.message || 'There was a problem getting the AI response.');
     } finally {
       setLoading(false);
     }
@@ -394,15 +395,15 @@ ${result}
 Requested changes:
 ${editorPrompt}
 
-Return ONLY final revised message.
-Rules: Hinglish, 60-90 words, plain text only, no code, no markdown, no bullets.`;
+Return ONLY the final revised message.
+Rules: Use clear English, 60-90 words, plain text only, no code, no markdown, no bullets.`;
 
       const revised = await generateCompactAiText(prompt);
       setResult(revised);
       setEditorHistory((prev) => [...prev, `You: ${editorPrompt}`, 'AI: Message updated']);
       setEditorPrompt('');
     } catch (e: any) {
-      setError(e?.message || 'Message edit me issue aaya.');
+      setError(e?.message || 'There was a problem editing the message.');
     } finally {
       setEditorLoading(false);
     }
@@ -411,14 +412,14 @@ Rules: Hinglish, 60-90 words, plain text only, no code, no markdown, no bullets.
   const buildAiPrompt = (): string => {
     switch (meta.id) {
       case 'resume-cover-letter':
-        return `Write ONE final ready-to-send Hinglish recruiter message.
+        return `Write ONE final ready-to-send recruiter message in English.
 Role: ${fields.role}
 Experience: ${fields.experience}
 Skills: ${fields.skills}
 Achievements: ${fields.achievements}
 Rules: 70-90 words, plain text only, no code, no markdown, no bullets.`;
       case 'proposal-writer':
-        return `Write ONE short winning Hinglish proposal message.
+        return `Write ONE short winning proposal message in English.
 Platform: ${fields.platform}
 Service: ${fields.service}
 Budget: ${fields.budget}
@@ -426,48 +427,48 @@ Timeline: ${fields.timeline}
 Client Brief: ${fields.clientBrief}
 Rules: 70-90 words, plain text only, no code, no markdown, no bullets.`;
       case 'portfolio-builder':
-        return `Write ONE compact Hinglish portfolio intro message.
+        return `Write ONE compact portfolio intro message in English.
 Niche: ${fields.niche}
 Target audience: ${fields.audience}
 Projects: ${fields.projects}
 Rules: 60-85 words, plain text only, no markdown, no bullets.`;
       case 'thumbnail-hook-generator':
-        return `Write ONE high-CTR Hinglish hook message.
+        return `Write ONE high-CTR hook message in English.
 Platform: ${fields.platform}
 Topic: ${fields.topic}
 Audience: ${fields.audience}
 Rules: 35-60 words, plain text only, no markdown, no list.`;
       case 'seo-blog-toolkit':
-        return `Write ONE crisp Hinglish SEO action note.
+        return `Write ONE crisp SEO action note in English.
 Niche: ${fields.niche}
 Primary keyword: ${fields.keyword}
 Country: ${fields.country}
 Rules: 60-80 words, include intent + title hint + CTA in one paragraph. No code/markdown.`;
       case 'social-calendar':
-        return `Write ONE short Hinglish social content plan note.
+        return `Write ONE short social content plan note in English.
 Niche: ${fields.niche}
 Platforms: ${fields.platforms}
 Days: ${fields.days}
 Rules: 70-90 words, plain text only, no markdown, no bullets.`;
       case 'meeting-action-items':
-        return `Write ONE compact Hinglish summary from notes.
+        return `Write ONE compact summary from notes in English.
 Meeting notes:
 ${fields.notes}
 Rules: 70-90 words, include objective + next actions in plain sentences only.`;
       case 'email-assistant':
-        return `Write ONE final client email in Hinglish.
+        return `Write ONE final client email in English.
 Email type: ${fields.emailType}
 Tone: ${fields.tone}
 Context: ${fields.context}
 Rules: 70-90 words, plain text only, no code, no markdown, no bullets.`;
       case 'code-bug-finder':
-        return `Write ONE plain-language debug note in Hinglish.
+        return `Write ONE plain-language debug note in English.
 Issue: ${fields.issue}
 Code:
 ${fields.code}
 Rules: 70-90 words, mention root issue + one fix direction. No code blocks, no markdown, no bullets.`;
       case 'interview-prep-bot':
-        return `Write ONE short Hinglish interview prep message.
+        return `Write ONE short interview prep message in English.
 Role: ${fields.role}
 Level: ${fields.level}
 Background: ${fields.background}
@@ -587,11 +588,11 @@ Always add 20-30% buffer for revisions, calls, and project management.`);
 
   const handleConvert = async () => {
     if (!convertFile) {
-      setError('Pehle image file upload karo.');
+      setError('Please upload an image file first.');
       return;
     }
     if (!convertFile.type.startsWith('image/')) {
-      setError('Abhi sirf image conversion supported hai.');
+      setError('Only image conversion is supported right now.');
       return;
     }
 
@@ -609,7 +610,7 @@ Always add 20-30% buffer for revisions, calls, and project management.`);
         const ctx = canvas.getContext('2d');
         if (!ctx) {
           setLoading(false);
-          setError('Canvas context available nahi hai.');
+          setError('The canvas context is not available.');
           URL.revokeObjectURL(inputUrl);
           return;
         }
@@ -620,7 +621,7 @@ Always add 20-30% buffer for revisions, calls, and project management.`);
             URL.revokeObjectURL(inputUrl);
             if (!blob) {
               setLoading(false);
-              setError('Conversion fail ho gaya. Doosri image try karo.');
+              setError('Conversion failed. Please try another image.');
               return;
             }
 
@@ -638,12 +639,12 @@ Size: ${(blob.size / 1024).toFixed(1)} KB`);
       image.onerror = () => {
         URL.revokeObjectURL(inputUrl);
         setLoading(false);
-        setError('Image load nahi ho paayi.');
+        setError('The image could not be loaded.');
       };
       image.src = inputUrl;
     } catch (e: any) {
       setLoading(false);
-      setError(e?.message || 'Conversion me issue aaya.');
+      setError(e?.message || 'There was a problem with the conversion.');
     }
   };
 
@@ -718,9 +719,7 @@ Size: ${(blob.size / 1024).toFixed(1)} KB`);
 
   return (
     <div className="container mx-auto max-w-4xl animate-fadeIn space-y-6">
-      <Link to="/" className="inline-block text-brand-accent hover:underline">
-        &larr; {t('common.backTools')}
-      </Link>
+      <PageBackButton label={t('common.backTools')} fallbackTo="/tools" />
 
       <div className="ios-card space-y-5 p-6 md:p-8">
         <div>
@@ -907,7 +906,7 @@ Size: ${(blob.size / 1024).toFixed(1)} KB`);
               <input
                 value={newTask}
                 onChange={(e) => setNewTask(e.target.value)}
-                placeholder="Aaj ka sprint task likho..."
+                placeholder="Write today's sprint task..."
                 className="w-full rounded-xl border border-brand-text-secondary/20 bg-brand-primary/50 px-4 py-3 text-brand-text outline-none"
               />
               <button
@@ -933,7 +932,7 @@ Size: ${(blob.size / 1024).toFixed(1)} KB`);
                   </button>
                 </div>
               ))}
-              {tasks.length === 0 && <p className="text-sm text-brand-text-secondary">Abhi koi task nahi. Pehla sprint add karo.</p>}
+              {tasks.length === 0 && <p className="text-sm text-brand-text-secondary">No tasks yet. Add your first sprint item.</p>}
             </div>
           </div>
         )}
@@ -977,13 +976,13 @@ Size: ${(blob.size / 1024).toFixed(1)} KB`);
 
               {result && (
                 <div className="rounded-xl border border-brand-accent/20 bg-brand-accent/5 p-4">
-                  <p className="mb-3 text-sm font-bold text-brand-text">Message kaisa laga? Kya change karna hai?</p>
+                  <p className="mb-3 text-sm font-bold text-brand-text">How does the message read? What should change?</p>
                   <div className="flex flex-col gap-3 sm:flex-row">
                     <textarea
                       value={editorPrompt}
                       onChange={(e) => setEditorPrompt(e.target.value)}
                       rows={3}
-                      placeholder="Jaise: tone friendly karo, 2 line aur short karo, CTA add karo..."
+                      placeholder="Example: make the tone friendlier, shorten it by 2 lines, add a CTA..."
                       className="w-full rounded-xl border border-brand-text-secondary/20 bg-brand-primary/50 px-4 py-3 text-brand-text outline-none focus:border-brand-accent/40"
                     />
                     <button

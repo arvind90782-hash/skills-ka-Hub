@@ -1,8 +1,8 @@
 import React, { Suspense, useEffect, useState } from 'react';
-import { HashRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ThemeProvider } from './hooks/useTheme';
-import { LocaleProvider } from './hooks/useLocale';
+import { LocaleProvider, useLocale } from './hooks/useLocale';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import Header from './components/Header';
 import CinematicIntro from './components/CinematicIntro';
@@ -10,9 +10,10 @@ import Loading from './components/Loading';
 import AuthGate from './components/AuthGate';
 import { TOOLS } from './constants';
 import { logUsageEvent } from './services/analyticsService';
-import { useLocale } from './hooks/useLocale';
 
 const HomePage = React.lazy(() => import('./pages/HomePage'));
+const ToolsPage = React.lazy(() => import('./pages/ToolsPage'));
+const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
 const CategoryPage = React.lazy(() => import('./pages/CategoryPage'));
 const ImageAnalyzerPage = React.lazy(() => import('./pages/ImageAnalyzerPage'));
 const VideoAnalyzerPage = React.lazy(() => import('./pages/VideoAnalyzerPage'));
@@ -25,6 +26,9 @@ const ProToolsPage = React.lazy(() => import('./pages/ProToolsPage'));
 const AdminPanelPage = React.lazy(() => import('./pages/AdminPanelPage'));
 const SecretCreatorLabPage = React.lazy(() => import('./pages/SecretCreatorLabPage'));
 const SmartLinkHubPage = React.lazy(() => import('./pages/SmartLinkHubPage'));
+const UltraToolsPage = React.lazy(() => import('./pages/UltraToolsPage'));
+const CreatorProfilePage = React.lazy(() => import('./pages/CreatorProfilePage'));
+const UserProfilePage = React.lazy(() => import('./pages/UserProfilePage'));
 
 const TOOL_PATH_MAP = new Map(TOOLS.map((tool) => [tool.path, tool.id]));
 
@@ -70,6 +74,13 @@ const AnimatedRoutes: React.FC = () => {
         <Suspense fallback={<Loading message="Loading page..." />}>
           <Routes location={location}>
             <Route path="/" element={<HomePage />} />
+            <Route path="/tools" element={<ToolsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/about" element={<CreatorProfilePage />} />
+            <Route path="/my-profile" element={<UserProfilePage />} />
+            <Route path="/creator-profile" element={<Navigate to="/about" replace />} />
+            <Route path="/user-profile" element={<Navigate to="/my-profile" replace />} />
+            <Route path="/ultra-tools" element={<UltraToolsPage />} />
             <Route path="/category/:categoryId" element={<CategoryPage />} />
             <Route path="/image-analyzer" element={<ImageAnalyzerPage />} />
             <Route path="/video-analyzer" element={<VideoAnalyzerPage />} />
@@ -82,6 +93,7 @@ const AnimatedRoutes: React.FC = () => {
             <Route path="/secret-creator-lab" element={<SecretCreatorLabPage />} />
             <Route path="/smart-link-hub" element={<SmartLinkHubPage />} />
             <Route path="/admin" element={<AdminPanelPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>
       </motion.div>
@@ -110,15 +122,8 @@ const AppLayout: React.FC = () => {
         <AnimatedRoutes />
       </main>
 
-      <div
-        className="pointer-events-none fixed bottom-4 right-4 z-50 rounded-md border border-brand-border/50 bg-brand-secondary/60 px-3 py-1 text-xs font-medium tracking-wide text-brand-text/70 shadow-sm backdrop-blur-sm"
-        aria-hidden="true"
-      >
-        {watermarkText}
-      </div>
-
-      <footer style={{ textAlign: 'center', padding: '20px', fontSize: '14px', color: '#888' }}>
-        &copy; 2026 Skills Ka Hub • <b>{watermarkText}</b>
+      <footer className="px-4 pb-8 pt-2 text-center text-sm text-brand-text-secondary">
+        &copy; 2026 Skills Hub | <span className="font-semibold text-brand-text">{watermarkText}</span>
       </footer>
 
       <CinematicIntro isOpen={showIntro} onClose={() => setShowIntro(false)} />
