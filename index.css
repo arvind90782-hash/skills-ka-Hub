@@ -1,0 +1,127 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --color-brand-primary: var(--bg-primary);
+  --color-brand-secondary: var(--bg-secondary);
+  --color-brand-accent: #007AFF; /* iOS Blue */
+  --color-brand-accent-light: #5856D6; /* iOS Indigo */
+  --color-brand-text: var(--text-primary);
+  --color-brand-text-secondary: var(--text-secondary);
+  
+  --radius-ios: 20px;
+  --radius-ios-lg: 28px;
+}
+
+:root {
+  --bg-primary: #F2F2F7;
+  --bg-secondary: #FFFFFF;
+  --text-primary: #000000;
+  --text-secondary: #8E8E93;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(0, 0, 0, 0.1);
+  --card-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.08);
+  --ios-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dark {
+  --bg-primary: #000000;
+  --bg-secondary: #1C1C1E;
+  --text-primary: #FFFFFF;
+  --text-secondary: #8E8E93;
+  --glass-bg: rgba(28, 28, 30, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --card-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.4);
+}
+
+@layer base {
+  body {
+    @apply bg-brand-primary text-brand-text font-sans transition-colors duration-500;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    background-image:
+      radial-gradient(circle at 0% 0%, rgba(0, 122, 255, 0.12) 0%, transparent 30%),
+      radial-gradient(circle at 100% 100%, rgba(88, 86, 214, 0.12) 0%, transparent 30%);
+    background-attachment: fixed;
+    animation: iosFadeIn 500ms var(--ios-ease);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 96px;
+  }
+
+  * {
+    scroll-behavior: smooth;
+  }
+}
+
+@layer components {
+  .ios-glass {
+    @apply backdrop-blur-xl bg-[var(--glass-bg)] border border-[var(--glass-border)] shadow-[var(--card-shadow)];
+  }
+  
+  .ios-card {
+    @apply bg-brand-secondary rounded-[var(--radius-ios)] shadow-[var(--card-shadow)] border border-[var(--glass-border)];
+    transition: transform 300ms var(--ios-ease), box-shadow 300ms var(--ios-ease), background-color 300ms var(--ios-ease);
+  }
+
+  .ios-btn {
+    @apply px-6 py-3 rounded-full font-semibold transition-all duration-300 active:scale-95;
+  }
+
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+
+  .motion-smooth {
+    transform: translateZ(0);
+    will-change: transform, opacity;
+  }
+}
+
+@keyframes iosFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-transition-wrapper {
+  @apply min-h-screen w-full;
+}
+
+/* Custom scrollbar for iOS feel */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #8E8E93;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+  transition: background-color 200ms var(--ios-ease);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #007AFF;
+  background-clip: content-box;
+}
