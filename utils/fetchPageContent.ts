@@ -12,6 +12,41 @@ export interface PageMetadata {
   keywords?: string[];
 }
 
+const readMeta = (html: string, attrName: string, attrValue: string): string => {
+  const metaPattern = new RegExp(
+    `<meta[^>]+${attrName}=["']${attrValue}["'][^>]+content=["']([^"']*)["'][^>]*>`,
+    'i'
+  );
+  const reversePattern = new RegExp(
+    `<meta[^>]+content=["']([^"']*)["'][^>]+${attrName}=["']${attrValue}["'][^>]*>`,
+    'i'
+  );
+
+  return metaPattern.exec(html)?.[1]?.trim() || reversePattern.exec(html)?.[1]?.trim() || '';
+};
+
+const readTitle = (html: string): string => {
+  return html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.replace(/\s+/g, ' ').trim() || '';
+};
+
+const readCanonical = (html: string): string => {
+  return html.match(/<link[^>]+rel=["']canonical["'][^>]+href=["']([^"']+)["'][^>]*>/i)?.[1]?.trim() || '';
+};
+
+const stripHtml = (html: string): string => {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<noscript[\s\S]*?<\/noscript>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+};
+
 export async function getPageMetadata(url: string): Promise<PageMetadata> {
   try {
     const controller = new AbortController();
@@ -20,8 +55,9 @@ export async function getPageMetadata(url: string): Promise<PageMetadata> {
     const response = await fetch(url, {
       signal: controller.signal,
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
+        'User-Agent':
+          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Safari/537.36',
+      },
     });
 
     clearTimeout(timeoutId);
@@ -31,55 +67,47 @@ export async function getPageMetadata(url: string): Promise<PageMetadata> {
     }
 
     const html = await response.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
+    const pageUrl = new URL(url);
+    const fallbackSite = pageUrl.hostname.replace(/^www\./i, '');
 
-    const metaTitle =
-      (doc.querySelector('meta[property="og:title"]') as HTMLMetaElement)?.content?.trim() ||
-      (doc.querySelector('meta[name="twitter:title"]') as HTMLMetaElement)?.content?.trim() ||
-      doc.title.trim();
-    const title = metaTitle || doc.querySelector('h1')?.textContent?.trim() || 'No title';
-    const metaDesc =
-      (doc.querySelector('meta[property="og:description"]') as HTMLMetaElement)?.content?.trim() ||
-      (doc.querySelector('meta[name="description"]') as HTMLMetaElement)?.content?.trim() ||
-      '';
-    const description = metaDesc;
+    const title =
+      readMeta(html, 'property', 'og:title') ||
+      readMeta(html, 'name', 'twitter:title') ||
+      readTitle(html) ||
+      fallbackSite;
+    const description =
+      readMeta(html, 'property', 'og:description') || readMeta(html, 'name', 'description') || '';
     const author =
-      (doc.querySelector('meta[name="author"]') as HTMLMetaElement)?.content?.trim() ||
-      (doc.querySelector('meta[property="article:author"]') as HTMLMetaElement)?.content?.trim() ||
-      (doc.querySelector('meta[name="twitter:creator"]') as HTMLMetaElement)?.content?.trim() ||
+      readMeta(html, 'name', 'author') ||
+      readMeta(html, 'property', 'article:author') ||
+      readMeta(html, 'name', 'twitter:creator') ||
       '';
-    const siteName =
-      (doc.querySelector('meta[property="og:site_name"]') as HTMLMetaElement)?.content?.trim() ||
-      new URL(url).hostname.replace(/^www\./i, '');
-    const image =
-      (doc.querySelector('meta[property="og:image"]') as HTMLMetaElement)?.content?.trim() ||
-      (doc.querySelector('meta[name="twitter:image"]') as HTMLMetaElement)?.content?.trim() ||
-      '';
-    const canonicalUrl = (doc.querySelector('link[rel="canonical"]') as HTMLLinkElement)?.href?.trim() || url;
-    const ogType =
-      (doc.querySelector('meta[property="og:type"]') as HTMLMetaElement)?.content?.trim() ||
-      (doc.querySelector('meta[name="twitter:card"]') as HTMLMetaElement)?.content?.trim() ||
-      '';
+    const siteName = readMeta(html, 'property', 'og:site_name') || fallbackSite;
+    const image = readMeta(html, 'property', 'og:image') || readMeta(html, 'name', 'twitter:image') || '';
+    const canonicalUrl = readCanonical(html) || url;
+    const ogType = readMeta(html, 'property', 'og:type') || readMeta(html, 'name', 'twitter:card') || '';
     const publishedAt =
-      (doc.querySelector('meta[property="article:published_time"]') as HTMLMetaElement)?.content?.trim() ||
-      (doc.querySelector('meta[name="pubdate"]') as HTMLMetaElement)?.content?.trim() ||
-      (doc.querySelector('time')?.getAttribute('datetime') || '').trim() ||
+      readMeta(html, 'property', 'article:published_time') ||
+      readMeta(html, 'name', 'pubdate') ||
+      html.match(/<time[^>]+datetime=["']([^"']+)["'][^>]*>/i)?.[1]?.trim() ||
       '';
-    const keywords =
-      (doc.querySelector('meta[name="keywords"]') as HTMLMetaElement)?.content
-        ?.split(',')
-        .map((keyword) => keyword.trim())
-        .filter(Boolean) || [];
-    
-    // Get main readable text (limit to avoid huge payloads)
-    const main = doc.querySelector('main') || doc.querySelector('article') || doc.body;
-    const text = main?.textContent?.trim().slice(0, 10000) || '';
+
+    const keywordString = readMeta(html, 'name', 'keywords');
+    const keywords = keywordString
+      .split(',')
+      .map((keyword) => keyword.trim())
+      .filter(Boolean);
+
+    const bodyMatch =
+      html.match(/<main[^>]*>([\s\S]*?)<\/main>/i)?.[1] ||
+      html.match(/<article[^>]*>([\s\S]*?)<\/article>/i)?.[1] ||
+      html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)?.[1] ||
+      html;
 
     return {
       title,
       description,
-      text,
+      text: stripHtml(bodyMatch).slice(0, 10000),
       url,
       author,
       siteName,
@@ -90,18 +118,19 @@ export async function getPageMetadata(url: string): Promise<PageMetadata> {
       keywords,
     };
   } catch (error) {
-    if (error instanceof Error) {
-      if (error.name === 'AbortError') {
-        throw new Error('Page load timeout - try shorter URL or later');
-      }
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('Page load timeout - try again later.');
     }
-    // Fallback
+
+    const fallbackUrl = new URL(url);
+    const hostname = fallbackUrl.hostname.replace(/^www\./i, '');
+
     return {
-      title: new URL(url).hostname,
+      title: hostname,
       description: '',
       text: '',
       url,
-      siteName: new URL(url).hostname.replace(/^www\./i, ''),
+      siteName: hostname,
     };
   }
 }

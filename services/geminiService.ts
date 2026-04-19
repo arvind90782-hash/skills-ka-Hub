@@ -1,5 +1,7 @@
 import type { ContentBlock, GeneratedContent, SubPage } from '../types';
 import { logUsageEvent } from './analyticsService';
+import { getCurrentCreditBalance, recordUsageAndConsumeCredits } from './creditService';
+import { getToolDefinition, type ToolCategory, type ToolGenerationType, type ToolProvider } from './toolCatalog';
 
 const VALID_TOOL_IDS = ['image-analyzer', 'video-analyzer', 'image-animator', 'image-generator'] as const;
 type ValidToolId = (typeof VALID_TOOL_IDS)[number];
@@ -12,6 +14,55 @@ type QnAHistoryItem = {
 type QnASource = {
   uri: string;
   title: string;
+};
+
+type QuotaInfo = {
+  quotaMetric?: string;
+  quotaId?: string;
+  quotaValue?: string;
+  quotaDimensions?: Record<string, unknown>;
+  retryDelay?: string;
+  retryDelayMs?: number;
+};
+
+type GeminiApiError = Error & {
+  status?: number;
+  quotaInfo?: QuotaInfo;
+  details?: unknown;
+};
+
+export type ToolResponseMeta = {
+  toolId: string;
+  toolName: string;
+  generationType: ToolGenerationType;
+  category: ToolCategory;
+  requiredApi: string;
+  requiredAiEngine: string;
+  provider: ToolProvider;
+  model: string;
+  providerChain: ToolProvider[];
+  fallbackUsed: boolean;
+  creditsRequired: number;
+  estimatedCostUsd: number;
+  notice?: string;
+  cached?: boolean;
+};
+
+type VideoGenerationStartResponse = {
+  operationName?: string;
+  model?: string;
+  status?: 'in_progress' | 'done';
+  aspectRatio?: '16:9' | '9:16';
+  resolution?: string;
+  numberOfVideos?: number;
+};
+
+type VideoGenerationPollResponse = {
+  status?: 'in_progress' | 'done';
+  operationName?: string;
+  progressMessage?: string;
+  videoBase64?: string;
+  mimeType?: string;
 };
 
 const isNonEmptyString = (value: unknown): value is string =>
@@ -27,6 +78,8 @@ const toStringArray = (value: unknown, minLen = 1): string[] => {
   const arr = value.filter(isNonEmptyString).map((entry) => entry.trim());
   return arr.length >= minLen ? arr : [];
 };
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const getPreferredLanguageHint = (): string => {
   if (typeof window === 'undefined') {
@@ -94,7 +147,10 @@ const isModelNotFoundError = (error: unknown): boolean => {
   );
 };
 
-const callGeminiApi = async <T>(action: string, payload: Record<string, unknown>): Promise<T> => {
+const callGeminiApi = async <T>(
+  action: string,
+  payload: Record<string, unknown>
+): Promise<{ data: T; meta?: ToolResponseMeta }> => {
   const response = await fetch('/api/gemini', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -106,14 +162,27 @@ const callGeminiApi = async <T>(action: string, payload: Record<string, unknown>
   try {
     parsed = raw ? JSON.parse(raw) : {};
   } catch {
-    throw new Error(raw || 'Server response invalid');
+    const error = new Error(raw || 'Server response invalid') as GeminiApiError;
+    error.status = response.status;
+    throw error;
   }
 
   if (!response.ok || !parsed?.ok) {
-    throw new Error(parsed?.error || `Request failed with status ${response.status}`);
+    const error = new Error(parsed?.error || `Request failed with status ${response.status}`) as GeminiApiError;
+    error.status = typeof parsed?.status === 'number' ? parsed.status : response.status;
+    if (parsed?.quotaInfo) {
+      error.quotaInfo = parsed.quotaInfo as QuotaInfo;
+    }
+    if (parsed?.details) {
+      error.details = parsed.details;
+    }
+    throw error;
   }
 
-  return parsed.data as T;
+  return {
+    data: parsed.data as T,
+    meta: parsed.meta as ToolResponseMeta | undefined,
+  };
 };
 
 const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string): Promise<T> =>
@@ -133,9 +202,29 @@ const withTimeout = <T>(promise: Promise<T>, timeoutMs: number, timeoutMessage: 
 export const getFriendlyAiErrorMessage = (error: unknown, fallbackMessage: string): string => {
   const raw = errorToString(error);
   const normalized = raw.toLowerCase();
+  const quotaInfo = (error as GeminiApiError | undefined)?.quotaInfo;
+
+  const quotaSuffix = (() => {
+    if (!quotaInfo) {
+      return '';
+    }
+
+    const parts: string[] = [];
+    if (quotaInfo.quotaId) {
+      parts.push(quotaInfo.quotaId);
+    } else if (quotaInfo.quotaMetric) {
+      parts.push(quotaInfo.quotaMetric);
+    }
+
+    if (quotaInfo.retryDelay) {
+      parts.push(`retry after ${quotaInfo.retryDelay}`);
+    }
+
+    return parts.length > 0 ? ` (${parts.join(', ')})` : '';
+  })();
 
   if (normalized.includes('server api key missing') || normalized.includes('api key set nahi')) {
-    return 'The server API key is missing. Set `GEMINI_API_KEY` in Vercel and redeploy.';
+    return 'The server API key is missing. Set GOOGLE_API_KEY or GEMINI_API_KEY in Vercel and redeploy.';
   }
 
   if (
@@ -145,7 +234,7 @@ export const getFriendlyAiErrorMessage = (error: unknown, fallbackMessage: strin
     normalized.includes('rate limit') ||
     normalized.includes('too many requests')
   ) {
-    return 'The Gemini quota or rate limit has been exceeded. Please try again later or check your billing plan.';
+    return `The Gemini quota or rate limit has been exceeded${quotaSuffix}. Please try again later or check your billing plan.`;
   }
 
   if (isModelNotFoundError(error)) {
@@ -169,11 +258,54 @@ export const getFriendlyAiErrorMessage = (error: unknown, fallbackMessage: strin
     return 'A network issue occurred. Check your internet connection and try again.';
   }
 
+  if (
+    normalized.includes('function_invocation_failed') ||
+    normalized.includes('function invocation failed') ||
+    normalized.includes('deadline exceeded') ||
+    normalized.includes('server timed out') ||
+    normalized.includes('timeout')
+  ) {
+    return 'The video server timed out while processing the request. Please try again; the tool now uses safer background polling.';
+  }
+
   if (raw.includes('{"error"') || raw.length > 300) {
     return fallbackMessage;
   }
 
   return raw || fallbackMessage;
+};
+
+const assertCreditsAvailable = async (toolId: string) => {
+  const definition = getToolDefinition(toolId);
+  if (!definition || definition.creditsRequired <= 0) {
+    return;
+  }
+
+  const balance = await getCurrentCreditBalance();
+  if (balance < definition.creditsRequired) {
+    throw new Error(
+      `Not enough credits. ${definition.name} needs ${definition.creditsRequired} credits and your balance is ${balance}.`
+    );
+  }
+};
+
+const persistUsageFromMeta = async (toolId: string, meta?: ToolResponseMeta) => {
+  const definition = getToolDefinition(toolId);
+  if (!definition || !meta || meta.cached || meta.creditsRequired <= 0) {
+    return;
+  }
+
+  await recordUsageAndConsumeCredits({
+    toolId,
+    toolName: meta.toolName || definition.name,
+    apiUsed: meta.provider,
+    creditsUsed: meta.creditsRequired,
+    generationType: meta.generationType,
+    estimatedCostUsd: meta.estimatedCostUsd,
+    model: meta.model,
+    fallbackUsed: meta.fallbackUsed,
+    status: 'success',
+  });
 };
 
 const FALLBACK_BLOCK: ContentBlock = {
@@ -508,7 +640,7 @@ export const generateSkillContent = async (skillName: string): Promise<Generated
 
   try {
     void logUsageEvent('tool_action', { toolId: 'course-generator', action: 'generate_course', skillName });
-    const data = await withTimeout(
+    const response = await withTimeout(
       callGeminiApi<{ jsonText: string }>('generateSkillContent', {
         skillName,
         preferredLanguage,
@@ -516,7 +648,7 @@ export const generateSkillContent = async (skillName: string): Promise<Generated
       12000,
       'Course generation timeout'
     );
-    const parsedJson = JSON.parse(data.jsonText || '{}');
+    const parsedJson = JSON.parse(response.data.jsonText || '{}');
     const normalizedContent = normalizeGeneratedContent(skillName, parsedJson);
     try {
       sessionStorage.setItem(cacheKey, JSON.stringify(normalizedContent));
@@ -538,9 +670,16 @@ export const generateSkillContent = async (skillName: string): Promise<Generated
 
 export const analyzeImage = async (prompt: string, imageBase64: string, mimeType: string): Promise<string> => {
   try {
+    await assertCreditsAvailable('image-analyzer');
     void logUsageEvent('tool_action', { toolId: 'image-analyzer', action: 'analyze' });
-    const data = await callGeminiApi<{ text: string }>('analyzeImage', { prompt, imageBase64, mimeType });
-    return data.text || 'The result was unclear. Please try again.';
+    const response = await callGeminiApi<{ text: string }>('analyzeImage', {
+      toolId: 'image-analyzer',
+      prompt,
+      imageBase64,
+      mimeType,
+    });
+    await persistUsageFromMeta('image-analyzer', response.meta);
+    return response.data.text || 'The result was unclear. Please try again.';
   } catch (error) {
     throw new Error(getFriendlyAiErrorMessage(error, 'There was a problem with image analysis. Please try again later.'));
   }
@@ -548,9 +687,16 @@ export const analyzeImage = async (prompt: string, imageBase64: string, mimeType
 
 export const analyzeVideo = async (prompt: string, videoBase64: string, mimeType: string): Promise<string> => {
   try {
+    await assertCreditsAvailable('video-analyzer');
     void logUsageEvent('tool_action', { toolId: 'video-analyzer', action: 'analyze' });
-    const data = await callGeminiApi<{ text: string }>('analyzeVideo', { prompt, videoBase64, mimeType });
-    return data.text || 'The video result was unclear. Please try again.';
+    const response = await callGeminiApi<{ text: string }>('analyzeVideo', {
+      toolId: 'video-analyzer',
+      prompt,
+      videoBase64,
+      mimeType,
+    });
+    await persistUsageFromMeta('video-analyzer', response.meta);
+    return response.data.text || 'The video result was unclear. Please try again.';
   } catch (error) {
     throw new Error(getFriendlyAiErrorMessage(error, 'There was a problem with video analysis. Please try again later.'));
   }
@@ -561,21 +707,69 @@ export const animateImage = async (
   imageBase64: string,
   mimeType: string,
   aspectRatio: '16:9' | '9:16',
-  onProgress: (message: string) => void
+  onProgress: (message: string) => void,
+  options?: {
+    videoDuration?: number;
+    fps?: number;
+    resolution?: string;
+    style?: string;
+    cameraMotion?: string;
+  }
 ): Promise<string> => {
   try {
-    onProgress('Video generation is starting...');
+    await assertCreditsAvailable('image-animator');
     void logUsageEvent('tool_action', { toolId: 'image-animator', action: 'animate' });
-    const data = await callGeminiApi<{ videoBase64: string; mimeType: string }>('animateImage', {
+    onProgress('Starting video generation...');
+    const start = await callGeminiApi<VideoGenerationStartResponse>('startVideoGeneration', {
+      toolId: 'image-animator',
       prompt,
       imageBase64,
       mimeType,
       aspectRatio,
+      videoDuration: options?.videoDuration,
+      fps: options?.fps,
+      resolution: options?.resolution,
+      style: options?.style,
+      cameraMotion: options?.cameraMotion,
     });
-    onProgress('The video is ready!');
-    const bytes = Uint8Array.from(atob(data.videoBase64), (c) => c.charCodeAt(0));
-    const blob = new Blob([bytes], { type: data.mimeType || 'video/mp4' });
-    return URL.createObjectURL(blob);
+
+    const operationName = start.data.operationName?.trim();
+    if (!operationName) {
+      throw new Error('The server did not return a video operation id.');
+    }
+
+    const hardTimeoutMs = 12 * 60_000;
+    const pollIntervalMs = 8_000;
+    const startedAt = Date.now();
+    let lastMessage = 'The video is being processed on Google servers...';
+    onProgress(lastMessage);
+
+    while (Date.now() - startedAt < hardTimeoutMs) {
+      const status = await withTimeout(
+        callGeminiApi<VideoGenerationPollResponse>('pollVideoGeneration', { operationName }),
+        20_000,
+        'Video status check timed out'
+      );
+
+      if (status.data.status === 'done' && status.data.videoBase64) {
+        onProgress('The video is ready!');
+        await persistUsageFromMeta('image-animator', start.meta);
+        const bytes = Uint8Array.from(atob(status.data.videoBase64), (c) => c.charCodeAt(0));
+        const blob = new Blob([bytes], { type: status.data.mimeType || 'video/mp4' });
+        return URL.createObjectURL(blob);
+      }
+
+      if (status.data.status === 'done' && !status.data.videoBase64) {
+        throw new Error('The video finished, but the download payload was empty.');
+      }
+
+      lastMessage =
+        status.data.progressMessage || 'The video is still rendering. This tab can stay open while Google finishes processing it.';
+      onProgress(lastMessage);
+      await sleep(pollIntervalMs);
+    }
+
+    throw new Error('The video generation took too long. Please try again.');
   } catch (error) {
     throw new Error(getFriendlyAiErrorMessage(error, 'There was a problem with video animation. Please try again later.'));
   }
@@ -583,13 +777,31 @@ export const animateImage = async (
 
 export const generateImage = async (
   prompt: string,
-  imageSize: '1K' | '2K' | '4K'
+  imageSize: '1K' | '2K' | '4K',
+  options?: {
+    toolId?: string;
+    aspectRatio?: '16:9' | '9:16' | '1:1';
+    style?: string;
+    sourceImageBase64?: string;
+    sourceImageMimeType?: string;
+  }
 ): Promise<{ imageUrl: string; altText: string }> => {
   try {
-    void logUsageEvent('tool_action', { toolId: 'image-generator', action: 'generate_image', imageSize });
-    const data = await callGeminiApi<{ imageUrl: string; altText: string }>('generateImage', { prompt, imageSize });
-    let imageUrl = data.imageUrl || '';
-    let altText = data.altText || 'Generated image';
+    const toolId = options?.toolId || 'image-generator';
+    await assertCreditsAvailable(toolId);
+    void logUsageEvent('tool_action', { toolId, action: 'generate_image', imageSize });
+    const response = await callGeminiApi<{ imageUrl: string; altText: string }>('generateImage', {
+      toolId,
+      prompt,
+      imageSize,
+      aspectRatio: options?.aspectRatio || '1:1',
+      style: options?.style,
+      sourceImageBase64: options?.sourceImageBase64,
+      sourceImageMimeType: options?.sourceImageMimeType,
+    });
+    await persistUsageFromMeta(toolId, response.meta);
+    let imageUrl = response.data.imageUrl || '';
+    let altText = response.data.altText || 'Generated image';
 
     if (!imageUrl) {
       const safeText = (altText || prompt || 'Generated visual').slice(0, 180);
@@ -607,13 +819,35 @@ export const generateImage = async (
   }
 };
 
-export const generateFastText = async (prompt: string) => {
+export const generateFastText = async (
+  prompt: string,
+  options?: {
+    toolId?: string;
+    tone?: string;
+    length?: string;
+    outputFormat?: string;
+    temperature?: number;
+    maxOutputTokens?: number;
+  }
+) => {
   try {
-    void logUsageEvent('tool_action', { toolId: 'rocket-writer', action: 'generate_text' });
-    const data = await callGeminiApi<{ text: string }>('generateFastText', { prompt });
-    const text = data.text || '';
+    const toolId = options?.toolId || 'rocket-writer';
+    await assertCreditsAvailable(toolId);
+    void logUsageEvent('tool_action', { toolId, action: 'generate_text' });
+    const response = await callGeminiApi<{ text: string }>('generateFastText', {
+      toolId,
+      prompt,
+      tone: options?.tone,
+      length: options?.length,
+      outputFormat: options?.outputFormat,
+      temperature: options?.temperature,
+      maxOutputTokens: options?.maxOutputTokens,
+    });
+    await persistUsageFromMeta(toolId, response.meta);
+    const text = response.data.text || '';
+    const meta = response.meta;
     return (async function* () {
-      yield { text };
+      yield { text, meta };
     })();
   } catch (error) {
     throw new Error(getFriendlyAiErrorMessage(error, 'Text generation failed for now. Please try again later.'));
@@ -626,14 +860,17 @@ export const askQna = async (
   languageName: string
 ): Promise<{ text: string; sources: QnASource[] }> => {
   try {
-    const data = await callGeminiApi<{ text: string; sources: QnASource[] }>('askQna', {
+    await assertCreditsAvailable('qna-bot');
+    const response = await callGeminiApi<{ text: string; sources: QnASource[] }>('askQna', {
+      toolId: 'qna-bot',
       message,
       languageName,
       history,
     });
+    await persistUsageFromMeta('qna-bot', response.meta);
     return {
-      text: data.text || '',
-      sources: Array.isArray(data.sources) ? data.sources : [],
+      text: response.data.text || '',
+      sources: Array.isArray(response.data.sources) ? response.data.sources : [],
     };
   } catch (error) {
     throw new Error(getFriendlyAiErrorMessage(error, 'Sorry, the AI response is unavailable right now. Please try again later.'));
@@ -644,9 +881,16 @@ import type { SmartLinkOutput } from '../types';
 
 export const analyzeSmartLink = async (url: string, note = '', intent = ''): Promise<SmartLinkOutput> => {
   try {
+    await assertCreditsAvailable('smart-link-hub');
     void logUsageEvent('tool_action', { toolId: 'smart-link-hub', action: 'analyze' });
-    const data = await callGeminiApi< { data: SmartLinkOutput } >('analyzeSmartLink', { url, note, intent });
-    return data.data;
+    const response = await callGeminiApi<SmartLinkOutput>('analyzeSmartLink', {
+      toolId: 'smart-link-hub',
+      url,
+      note,
+      intent,
+    });
+    await persistUsageFromMeta('smart-link-hub', response.meta);
+    return response.data;
   } catch (error) {
     throw new Error(getFriendlyAiErrorMessage(error, 'Link analysis failed. Check URL and try again.'));
   }
@@ -654,12 +898,21 @@ export const analyzeSmartLink = async (url: string, note = '', intent = ''): Pro
 
 export const generateSpeech = async (text: string): Promise<string> => {
   try {
-    const data = await callGeminiApi<{ base64Audio: string }>('generateSpeech', { text });
-    if (!data.base64Audio) {
+    const response = await callGeminiApi<{ base64Audio: string }>('generateSpeech', { text });
+    if (!response.data.base64Audio) {
       throw new Error('Audio could not be generated.');
     }
-    return data.base64Audio;
+    return response.data.base64Audio;
   } catch (error) {
     throw new Error(getFriendlyAiErrorMessage(error, 'There was a problem with audio generation. Please try again later.'));
   }
+};
+
+export const fetchPlatformAudit = async () => {
+  const response = await callGeminiApi<{
+    tools: Array<Record<string, unknown>>;
+    audit: Array<Record<string, unknown>>;
+    creditConfig: Record<string, unknown>;
+  }>('getPlatformAudit', {});
+  return response.data;
 };

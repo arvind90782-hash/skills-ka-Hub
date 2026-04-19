@@ -5,6 +5,7 @@ import { TOOLS } from '../constants';
 import type { CardItem } from '../types';
 import Card from '../components/SkillCard';
 import PageBackButton from '../components/PageBackButton';
+import { groupToolDefinitionsByCategory, type ToolCategory } from '../services/toolCatalog';
 
 type ToolGroup = {
   title: string;
@@ -42,48 +43,48 @@ const ACCOUNT_LINKS: CardItem[] = [
   },
 ];
 
-const groupByIds = (ids: string[]): CardItem[] =>
-  TOOLS.filter((tool) => ids.includes(tool.id)).map((tool) => tool as CardItem);
+const GROUP_COPY: Record<ToolCategory, { title: string; description: string }> = {
+  'text-generation-tools': {
+    title: 'Text Generation Tools',
+    description: 'Writing, strategy, email, resume, and research tools powered by language models.',
+  },
+  'image-generation-tools': {
+    title: 'Image Generation Tools',
+    description: 'Prompt-to-image and image refinement tools for creators and designers.',
+  },
+  'video-generation-tools': {
+    title: 'Video Generation Tools',
+    description: 'Animation and cinematic generation tools for motion-heavy workflows.',
+  },
+  'audio-generation-tools': {
+    title: 'Audio Generation Tools',
+    description: 'Speech and voice-focused generation tools.',
+  },
+  'prompt-generation-tools': {
+    title: 'Prompt Engineering Tools',
+    description: 'Prompt builders, hooks, idea systems, and structured creator planning tools.',
+  },
+  'code-generation-tools': {
+    title: 'Code Tools',
+    description: 'Developer-focused debugging and refactor assistance tools.',
+  },
+  'image-editing-tools': {
+    title: 'Image Editing Tools',
+    description: 'Image understanding and editing-oriented helper tools.',
+  },
+  'utility-ai-tools': {
+    title: 'Utility AI Tools',
+    description: 'Knowledge capture, analysis, download, and workflow utility tools.',
+  },
+};
 
-const TOOL_GROUPS: ToolGroup[] = [
-  {
-    title: 'AI Writing Tools',
-    description: 'Fast writing, client messaging, and idea generation tools.',
-    items: groupByIds([
-      'rocket-writer',
-      'qna-bot',
-      'resume-cover-letter',
-      'proposal-writer',
-      'seo-blog-toolkit',
-      'social-calendar',
-      'meeting-action-items',
-      'email-assistant',
-      'interview-prep-bot',
-      'code-bug-finder',
-      'thumbnail-hook-generator',
-      'portfolio-builder',
-      'pricing-calculator',
-      'contract-generator',
-      'invoice-quotation',
-      'habit-sprint-tracker',
-    ]),
-  },
-  {
-    title: 'AI Image Tools',
-    description: 'Analyze, generate, and animate visuals from a single place.',
-    items: groupByIds(['image-generator', 'image-analyzer', 'image-animator']),
-  },
-  {
-    title: 'AI Video Tools',
-    description: 'Deep video analysis and motion creation tools for creators.',
-    items: groupByIds(['video-analyzer', 'ultra-tools']),
-  },
-  {
-    title: 'Utility Tools',
-    description: 'Reliable helpers for downloads, knowledge capture, and workflows.',
-    items: groupByIds(['media-downloader', 'smart-link-hub', 'secret-creator-lab']),
-  },
-];
+const TOOL_GROUPS: ToolGroup[] = Object.entries(groupToolDefinitionsByCategory())
+  .filter(([, items]) => items.length > 0)
+  .map(([category, items]) => ({
+    title: GROUP_COPY[category as ToolCategory].title,
+    description: GROUP_COPY[category as ToolCategory].description,
+    items: items.map((tool) => tool as CardItem),
+  }));
 
 const ToolsPage: React.FC = () => {
   return (

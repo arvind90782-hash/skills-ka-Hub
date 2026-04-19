@@ -3,7 +3,6 @@ const BLOCKED_DOMAINS = [
   'youtu.be',
   'facebook.com',
   'instagram.com',
-  'pinterest.com',
   'tiktok.com',
   'x.com',
   'twitter.com',

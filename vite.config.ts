@@ -3,6 +3,54 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 
+const readRequestBody = (req: NodeJS.ReadableStream): Promise<string> =>
+  new Promise((resolve, reject) => {
+    const chunks: Buffer[] = [];
+
+    req.on('data', (chunk) => {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
+    });
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    req.on('error', reject);
+  });
+
+const localApiPlugin = () => ({
+  name: 'skills-hub-local-api',
+  configureServer(server: import('vite').ViteDevServer) {
+    server.middlewares.use(async (req, res, next) => {
+      const pathname = req.url?.split('?')[0];
+      const routeMap: Record<string, string> = {
+        '/api/gemini': '/api/gemini.ts',
+        '/api/downloader': '/api/downloader.ts',
+      };
+
+      const modulePath = pathname ? routeMap[pathname] : undefined;
+      if (!modulePath) {
+        next();
+        return;
+      }
+
+      try {
+        const mod = await server.ssrLoadModule(modulePath);
+        if (req.method === 'POST') {
+          (req as any).body = await readRequestBody(req);
+        }
+        await mod.default(req, res);
+      } catch (error) {
+        server.ssrFixStacktrace(error as Error);
+        res.statusCode = 500;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(
+          JSON.stringify({
+            ok: false,
+            error: error instanceof Error ? error.message : 'Local API middleware failed',
+          })
+        );
+      }
+    });
+  },
+});
+
 export default defineConfig(() => {
   return {
     server: {
@@ -56,7 +104,7 @@ export default defineConfig(() => {
       globals: true,
       setupFiles: './vitest.setup.ts',
     },
-    plugins: [react(), tailwindcss()],
+    plugins: [react(), tailwindcss(), localApiPlugin()],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
