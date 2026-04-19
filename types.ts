@@ -109,6 +109,36 @@ export interface GeneratedContent {
   subPages: SubPage[];
 }
 
+import type { ToolCategory, ToolGenerationType, ToolProvider } from '../services/toolCatalog';
+
+export type QuotaInfo = {
+  quotaMetric?: string;
+  quotaId?: string;
+  quotaValue?: number;
+  quotaDimensions?: Record<string, unknown>;
+  retryDelay?: string;
+  retryDelayMs?: number;
+};
+
+export interface ToolResponseMeta {
+  toolId: string;
+  toolName: string;
+  generationType: ToolGenerationType;
+  category: ToolCategory;
+  requiredApi: string;
+  requiredAiEngine: string;
+  provider: ToolProvider;
+  model: string;
+  providerChain: ToolProvider[];
+  fallbackUsed: boolean;
+  creditsRequired: number;
+  estimatedCostUsd: number;
+  notice?: string;
+  cached?: boolean;
+  quotaInfo?: QuotaInfo;
+  usageTokens?: { input: number; output: number };
+}
+
 export interface SmartLinkOutput {
   title: string;
   url: string;

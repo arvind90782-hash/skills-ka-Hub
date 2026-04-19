@@ -1,14 +1,31 @@
-# Smart Link Hub ✅ COMPLETE
+# AI Tools Platform Audit & Upgrade TODO
 
-All steps done:
-- [x] utils/fetchPageContent.ts 
-- [x] types.ts 
-- [x] pages/SmartLinkHubPage.tsx 
-- [x] services/geminiService.ts 
-- [x] api/gemini.ts (full pipeline)
-- [x] constants.ts (TOOLS entry)
-- [x] App.tsx (route)
-- [x] Page logic (analyze integration)
+## Research Phase ✅
+- [x] Tool inventory matrix built (26 tools)
+- [x] Backend paths verified (real APIs + fallbacks)
 
-**Test it:** Open http://localhost:5173/#smart-link-hub
+## Step 2: Live Quota/Credits UI ✅
+- [x] types.ts (QuotaInfo/ToolResponseMeta)
+- [x] AiGenerationMeta.tsx (quota display, low warnings, tokens, retry)
+- [x] @types/react installed
+
+## Step 2: Live Quota/Credits UI ✅
+- [x] types.ts (QuotaInfo/ToolResponseMeta)
+- [x] AiGenerationMeta.tsx (quota display, low warnings, tokens, retry)
+- [x] api/gemini.ts (meta/token passing)
+- [x] @types/react installed
+- [x] Minor TS fixes
+
+Progress: 2/6 complete ✅
+
+## Step 3: Video Fallbacks ✅
+- [x] api/gemini.ts HF video fallback (hotshot-xl primary free)
+- [x] Providers: HF > Gemini > Replicate > Runway
+- [ ] geminiService quota pass
+- [ ] ImageAnimatorPage Meta
+- [ ] Tests
+
+Progress: 3/6 (75%) complete
+
+Next: Step 4 - Error polish/tests after Step 3
 

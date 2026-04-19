@@ -31,6 +31,13 @@ type GeminiApiError = Error & {
   details?: unknown;
 };
 
+// import type { QuotaInfo, ToolResponseMeta } from '../types';
+
+type ToolResponseWithQuota = {
+  data: any;
+  meta?: ToolResponseMeta;
+};
+
 export type ToolResponseMeta = {
   toolId: string;
   toolName: string;
@@ -814,7 +821,8 @@ export const generateImage = async (
     }
 
     return { imageUrl, altText };
-  } catch (error) {
+  } catch (error: any) {
+    const quotaInfo = (error as any).quotaInfo;
     throw new Error(getFriendlyAiErrorMessage(error, 'There was a problem with image generation. Please try again later.'));
   }
 };

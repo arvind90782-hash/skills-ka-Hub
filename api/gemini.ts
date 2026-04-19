@@ -255,13 +255,15 @@ const setCachedResponse = (key: string, data: unknown, meta: ResponseMeta, ttlMs
   });
 };
 
-const buildToolMeta = (toolId: string, providerResult: ProviderResult<unknown>): ResponseMeta => {
+import type { QuotaInfo, ToolResponseMeta } from '../types';
+
+const buildToolMeta = (toolId: string, providerResult: ProviderResult<unknown>, quotaInfo?: QuotaInfo, usageTokens?: { input: number; output: number }): ToolResponseMeta => {
   const definition = getToolDefinition(toolId);
-  const fallbackMeta = {
+  const fallbackMeta: ToolResponseMeta = {
     toolId,
     toolName: toolId,
-    generationType: 'utility' as ToolGenerationType,
-    category: 'utility-ai-tools' as ToolCategory,
+    generationType: 'utility' as any,
+    category: 'utility-ai-tools' as any,
     requiredApi: 'Local runtime',
     requiredAiEngine: 'local-runtime',
     provider: providerResult.provider,
@@ -271,6 +273,8 @@ const buildToolMeta = (toolId: string, providerResult: ProviderResult<unknown>):
     creditsRequired: 0,
     estimatedCostUsd: 0,
     notice: providerResult.notice,
+    quotaInfo,
+    usageTokens,
   };
 
   if (!definition) {
@@ -293,6 +297,8 @@ const buildToolMeta = (toolId: string, providerResult: ProviderResult<unknown>):
     notice:
       providerResult.notice ||
       (providerResult.fallbackUsed ? 'Primary generation engine was busy. Switched to a backup provider.' : undefined),
+    quotaInfo,
+    usageTokens,
   };
 };
 
@@ -300,8 +306,8 @@ const getAvailableProviders = (toolId: string, requestedType?: ToolGenerationTyp
   const definition = getToolDefinition(toolId);
   const fallbackByType: Record<ToolGenerationType, ToolProvider[]> = {
     text: ['gemini', 'openrouter', 'together', 'huggingface'],
-    image: ['gemini', 'stability', 'replicate'],
-    video: ['gemini', 'replicate', 'runway'],
+    image: ['gemini', 'stability', 'replicate', 'huggingface'],
+    video: ['huggingface', 'gemini', 'replicate', 'runway'],
     audio: ['gemini'],
     prompt: ['gemini', 'openrouter', 'together', 'huggingface'],
     code: ['gemini', 'openrouter', 'together', 'huggingface'],
@@ -573,7 +579,13 @@ const runGeminiImageGeneration = async (input: {
 
   let imageUrl = '';
   let altText = 'Generated image';
+  let inputTokens = 0;
+  let outputTokens = 0;
   const parts = result.candidates?.[0]?.content?.parts || (result as any).parts || [];
+  const usage = result.usageMetadata || (result as any).usageMetadata;
+
+  inputTokens = usage?.promptTokenCount || 0;
+  outputTokens = usage?.candidatesTokenCount || usage?.completionTokenCount || 0;
 
   for (const part of parts) {
     if (part.inlineData?.data) {
@@ -587,7 +599,7 @@ const runGeminiImageGeneration = async (input: {
     throw new Error('Gemini did not return an image payload.');
   }
 
-  return { imageUrl, altText, model };
+  return { imageUrl, altText, model, inputTokens, outputTokens };
 };
 
 const runStabilityImageGeneration = async (input: {
@@ -865,6 +877,25 @@ const startRunwayVideoGeneration = async (input: {
   };
 };
 
+const startHuggingFaceVideoGeneration = async (input: {
+  prompt: string;
+  imageBase64?: string;
+  mimeType?: string;
+  aspectRatio: '16:9' | '9:16';
+}) => {
+  const model = getEnv('HUGGINGFACE_VIDEO_MODEL') || 'hotshot-xl/hotshot-xl';
+  const prediction = await runReplicatePrediction(model, {  // Use replicate-style for HF too if needed; or direct HF
+    prompt: input.prompt,
+    image: input.imageBase64 ? `data:${input.mimeType || 'image/png'};base64,${input.imageBase64}` : undefined,
+  });
+
+  return {
+    operationName: `hf:${prediction.id}`,
+    model,
+    status: 'in_progress' as const,
+  };
+};
+
 const startVideoProviderSequence = async (input: {
   toolId: string;
   prompt: string;
@@ -879,7 +910,7 @@ const startVideoProviderSequence = async (input: {
 }): Promise<ProviderResult<VideoStartResponse>> => {
   const providers = getAvailableProviders(input.toolId, 'video');
   if (providers.length === 0) {
-    throw new Error('No video generation provider is configured. Add a Veo, Replicate, or Runway API key.');
+    throw new Error('No video generation provider is configured. Add HF/Gemini/Replicate API key.');
   }
 
   const prompt = buildEnhancedPrompt({
@@ -894,6 +925,31 @@ const startVideoProviderSequence = async (input: {
   for (let index = 0; index < providers.length; index += 1) {
     const provider = providers[index];
     try {
+      if (provider === 'huggingface') {
+        const result = await startHuggingFaceVideoGeneration({
+          prompt,
+          imageBase64: input.imageBase64,
+          mimeType: input.mimeType,
+          aspectRatio: input.aspectRatio,
+        });
+
+        return {
+          data: {
+            operationName: result.operationName,
+            model: result.model,
+            status: 'in_progress',
+            aspectRatio: input.aspectRatio,
+            resolution: input.resolution,
+            numberOfVideos: 1,
+          },
+          provider,
+          model: result.model,
+          fallbackUsed: index > 0,
+          providerChain: providers,
+          notice: 'Using free HF video generation.',
+        };
+      }
+
       if (provider === 'gemini') {
         const result = await startGeminiVideoGeneration({
           prompt,
@@ -909,7 +965,7 @@ const startVideoProviderSequence = async (input: {
           data: {
             operationName: result.operationName,
             model: result.model,
-            status: result.status,
+            status: result.status as any,
             aspectRatio: input.aspectRatio,
             resolution: input.resolution,
             numberOfVideos: 1,
@@ -935,7 +991,7 @@ const startVideoProviderSequence = async (input: {
           data: {
             operationName: result.operationName,
             model: result.model,
-            status: result.status,
+            status: result.status as any,
             aspectRatio: input.aspectRatio,
             resolution: input.resolution,
             numberOfVideos: 1,
@@ -961,7 +1017,7 @@ const startVideoProviderSequence = async (input: {
           data: {
             operationName: result.operationName,
             model: result.model,
-            status: result.status,
+            status: result.status as any,
             aspectRatio: input.aspectRatio,
             resolution: input.resolution,
             numberOfVideos: 1,
@@ -1215,21 +1271,21 @@ ${message}`;
 
     if (action === 'generateImage') {
       const toolId = isNonEmptyString(payload.toolId) ? payload.toolId : 'image-generator';
-      const result = await runImageProviderSequence({
-        toolId,
-        prompt: sanitizePrompt(payload.prompt),
-        imageSize: payload.imageSize === '2K' || payload.imageSize === '4K' ? payload.imageSize : '1K',
-        aspectRatio:
-          payload.aspectRatio === '16:9' || payload.aspectRatio === '9:16' ? payload.aspectRatio : '1:1',
-        style: sanitizePrompt(payload.style),
-        sourceImageBase64: isNonEmptyString(payload.sourceImageBase64) ? payload.sourceImageBase64 : undefined,
-        sourceImageMimeType: isNonEmptyString(payload.sourceImageMimeType) ? payload.sourceImageMimeType : undefined,
-      });
+  const result = await runImageProviderSequence({
+    toolId,
+    prompt: sanitizePrompt(payload.prompt),
+    imageSize: payload.imageSize === '2K' || payload.imageSize === '4K' ? payload.imageSize : '1K',
+    aspectRatio:
+      payload.aspectRatio === '16:9' || payload.aspectRatio === '9:16' ? payload.aspectRatio : '1:1',
+    style: sanitizePrompt(payload.style),
+    sourceImageBase64: isNonEmptyString(payload.sourceImageBase64) ? payload.sourceImageBase64 : undefined,
+    sourceImageMimeType: isNonEmptyString(payload.sourceImageMimeType) ? payload.sourceImageMimeType : undefined,
+  });
 
-      const meta = buildToolMeta(toolId, result);
-      setCachedResponse(cacheKey, result.data, meta, 15 * 60_000);
-      json(res, 200, { ok: true, data: result.data, meta });
-      return;
+  const meta = buildToolMeta(toolId, result);
+  setCachedResponse(cacheKey, result.data, meta, 15 * 60_000);
+  json(res, 200, { ok: true, data: result.data, meta });
+  return;
     }
 
     if (action === 'analyzeImage') {
